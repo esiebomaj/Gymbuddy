@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Alert,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -15,6 +16,8 @@ import {AuthStackParamList} from '../../navigation/types';
 import {Colors, Spacing, Radius, Typography} from '../../theme';
 import InputField from '../../components/common/InputField';
 import PrimaryButton from '../../components/common/PrimaryButton';
+import {GoogleLogo} from '../../components/common/SocialButton';
+import {useAuth} from '../../context/AuthContext';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'SignUp'>;
@@ -88,6 +91,10 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const {signUp, signInWithGoogle} = useAuth();
 
   const validate = (): boolean => {
     const e: FormErrors = {};
@@ -107,11 +114,14 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
 
   const handleSignUp = async () => {
     if (!validate()) {return;}
-    navigation.navigate('Onboarding', {
-      name: name.trim(),
-      email: email.trim(),
-      password,
-    });
+    setLoading(true);
+    try {
+      await signUp(name.trim(), email.trim(), password);
+    } catch (error: any) {
+      Alert.alert('Sign Up Failed', error.message ?? 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -185,7 +195,38 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
             <PrimaryButton
               title="Create Account"
               onPress={handleSignUp}
+              loading={loading}
             />
+
+            {/* ── Divider ── */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* ── Google ── */}
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={async () => {
+                setGoogleLoading(true);
+                try {
+                  await signInWithGoogle();
+                } catch (error: any) {
+                  if (error.code !== 'SIGN_IN_CANCELLED') {
+                    Alert.alert('Google Sign Up Failed', error.message ?? 'Something went wrong.');
+                  }
+                } finally {
+                  setGoogleLoading(false);
+                }
+              }}
+              disabled={googleLoading}
+              activeOpacity={0.85}>
+              <GoogleLogo />
+              <Text style={styles.googleButtonText}>
+                {googleLoading ? 'Signing up…' : 'Continue with Google'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* ── Footer ── */}
@@ -229,6 +270,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     padding: Spacing.lg,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    ...Typography.bodySmall,
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 54,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: Spacing.sm,
+  },
+  googleButtonText: {
+    ...Typography.h4,
+    color: Colors.textPrimary,
+    letterSpacing: 0.3,
   },
   footer: {
     flexDirection: 'row',

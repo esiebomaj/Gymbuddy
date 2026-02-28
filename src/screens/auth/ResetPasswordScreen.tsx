@@ -17,7 +17,7 @@ import {AuthStackParamList} from '../../navigation/types';
 import {Colors, Spacing, Radius, Typography} from '../../theme';
 import InputField from '../../components/common/InputField';
 import PrimaryButton from '../../components/common/PrimaryButton';
-import {useAuth} from '../../context/AuthContext';
+import {supabase} from '../../lib/supabase';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'ResetPassword'>;
@@ -39,7 +39,6 @@ const ResetPasswordScreen: React.FC<Props> = ({navigation, route}) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const {resetPassword} = useAuth();
   const {email} = route.params;
 
   const requirements: Requirement[] = [
@@ -69,7 +68,10 @@ const ResetPasswordScreen: React.FC<Props> = ({navigation, route}) => {
     if (!validate()) {return;}
     setLoading(true);
     try {
-      await resetPassword(email, newPassword);
+      const {error} = await supabase.auth.updateUser({password: newPassword});
+      if (error) {
+        throw new Error(error.message);
+      }
       setSuccess(true);
     } catch (error: any) {
       Alert.alert('Reset Failed', error.message ?? 'Something went wrong.');

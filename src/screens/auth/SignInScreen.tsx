@@ -17,6 +17,7 @@ import {Colors, Spacing, Radius, Typography} from '../../theme';
 import {Dumbbell} from 'lucide-react-native';
 import InputField from '../../components/common/InputField';
 import PrimaryButton from '../../components/common/PrimaryButton';
+import {GoogleLogo} from '../../components/common/SocialButton';
 import {useAuth} from '../../context/AuthContext';
 
 type Props = {
@@ -28,8 +29,9 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const {signIn} = useAuth();
+  const {signIn, signInWithGoogle} = useAuth();
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
@@ -56,6 +58,19 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
       Alert.alert('Sign In Failed', error.message ?? 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      if (error.code !== 'SIGN_IN_CANCELLED') {
+        Alert.alert('Google Sign In Failed', error.message ?? 'Something went wrong.');
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -121,6 +136,25 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
             </TouchableOpacity>
 
             <PrimaryButton title="Sign In" onPress={handleSignIn} loading={loading} />
+
+            {/* ── Divider ── */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* ── Google ── */}
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={handleGoogleSignIn}
+              disabled={googleLoading}
+              activeOpacity={0.85}>
+              <GoogleLogo />
+              <Text style={styles.googleButtonText}>
+                {googleLoading ? 'Signing in…' : 'Continue with Google'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* ── Footer ── */}
@@ -199,6 +233,39 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 14,
     fontWeight: '500',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    ...Typography.bodySmall,
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 54,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: Spacing.sm,
+  },
+  googleButtonText: {
+    ...Typography.h4,
+    color: Colors.textPrimary,
+    letterSpacing: 0.3,
   },
   footer: {
     flexDirection: 'row',

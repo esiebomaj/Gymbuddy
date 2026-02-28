@@ -5,6 +5,15 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
+import {supabase} from '../lib/supabase';
+import {Session, User} from '@supabase/supabase-js';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import {GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID} from '@env';
+
+GoogleSignin.configure({
+  webClientId: GOOGLE_WEB_CLIENT_ID,
+  iosClientId: GOOGLE_IOS_CLIENT_ID,
+});
 
 export interface AuthUser {
   id: string;
@@ -15,12 +24,15 @@ export interface AuthUser {
 
 interface AuthContextType {
   user: AuthUser | null;
+  session: Session | null;
   isLoading: boolean;
+  needsOnboarding: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
-  resetPassword: (email: string, newPassword: string) => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,77 +45,127 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
+const mapSupabaseUser = (user: User): AuthUser => ({
+  id: user.id,
+  email: user.email ?? '',
+  name:
+    user.user_metadata?.full_name ??
+    user.user_metadata?.name ??
+    user.email?.split('@')[0] ??
+    '',
+  photoUrl: user.user_metadata?.avatar_url ?? user.user_metadata?.picture,
+});
+
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
   children,
 }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+
+  const handleSession = (s: Session | null) => {
+    setSession(s);
+    if (s?.user) {
+      setUser(mapSupabaseUser(s.user));
+      setNeedsOnboarding(s.user.user_metadata?.onboarded !== true);
+    } else {
+      setUser(null);
+      setNeedsOnboarding(false);
+    }
+  };
 
   useEffect(() => {
-    // Check for existing session on app start
-    // TODO: Replace with AsyncStorage/Keychain token check
-    const checkSession = async () => {
-      try {
-        // const token = await AsyncStorage.getItem('@auth_token');
-        // if (token) { const userData = await api.get('/me'); setUser(userData); }
-      } catch (error) {
-        console.error('Session check failed:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkSession();
+    supabase.auth.getSession().then(({data: {session: s}}) => {
+      handleSession(s);
+      setIsLoading(false);
+    });
+
+    const {
+      data: {subscription},
+    } = supabase.auth.onAuthStateChange((_event, s) => {
+      handleSession(s);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = useCallback(async (email: string, _password: string) => {
-    // TODO: Replace with real API call
-    // const { data } = await api.post('/auth/signin', { email, password });
-    // await AsyncStorage.setItem('@auth_token', data.token);
-    setUser({
-      id: '1',
-      email,
-      name: email.split('@')[0],
-    });
+  const signIn = useCallback(async (email: string, password: string) => {
+    const {error} = await supabase.auth.signInWithPassword({email, password});
+    if (error) {
+      throw new Error(error.message);
+    }
   }, []);
 
   const signUp = useCallback(
-    async (name: string, email: string, _password: string) => {
-      // TODO: Replace with real API call
-      setUser({id: '2', email, name});
+    async (name: string, email: string, password: string) => {
+      const {error} = await supabase.auth.signUp({
+        email,
+        password,
+        options: {data: {full_name: name}},
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
     },
     [],
   );
 
+  const signInWithGoogle = useCallback(async () => {
+    await GoogleSignin.hasPlayServices();
+    const response = await GoogleSignin.signIn();
+
+    const idToken = response.data?.idToken;
+    if (!idToken) {
+      throw new Error('Google sign-in failed — no ID token returned.');
+    }
+
+    const {error} = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token: idToken,
+    });
+    if (error) {
+      throw new Error(error.message);
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
-    // TODO: Clear token, call sign-out endpoint
-    setUser(null);
+    const {error} = await supabase.auth.signOut();
+    if (error) {
+      throw new Error(error.message);
+    }
   }, []);
 
   const sendPasswordReset = useCallback(async (email: string) => {
-    // TODO: Replace with real API call
-    // await api.post('/auth/forgot-password', { email });
-    console.log('Password reset email sent to:', email);
+    const {error} = await supabase.auth.resetPasswordForEmail(email);
+    if (error) {
+      throw new Error(error.message);
+    }
   }, []);
 
-  const resetPassword = useCallback(
-    async (email: string, _newPassword: string) => {
-      // TODO: Replace with real API call
-      // await api.post('/auth/reset-password', { email, newPassword });
-      console.log('Password reset for:', email);
-    },
-    [],
-  );
+  const completeOnboarding = useCallback(async () => {
+    const {error} = await supabase.auth.updateUser({
+      data: {onboarded: true},
+    });
+    if (error) {
+      throw new Error(error.message);
+    }
+    setNeedsOnboarding(false);
+  }, []);
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        session,
         isLoading,
+        needsOnboarding,
         signIn,
         signUp,
+        signInWithGoogle,
         signOut,
         sendPasswordReset,
-        resetPassword,
+        completeOnboarding,
       }}>
       {children}
     </AuthContext.Provider>

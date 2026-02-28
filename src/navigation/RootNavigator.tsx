@@ -6,11 +6,12 @@ import {Colors} from '../theme';
 import {useAuth} from '../context/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import MainStackNavigator from './MainStackNavigator';
+import OnboardingScreen from '../screens/auth/OnboardingScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
-  const {user, isLoading} = useAuth();
+  const {user, isLoading, needsOnboarding} = useAuth();
 
   if (isLoading) {
     return (
@@ -22,10 +23,12 @@ const RootNavigator: React.FC = () => {
 
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
-      {user ? (
-        <Stack.Screen name="Main" component={MainStackNavigator} />
-      ) : (
+      {!user ? (
         <Stack.Screen name="Auth" component={AuthNavigator} />
+      ) : needsOnboarding ? (
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+      ) : (
+        <Stack.Screen name="Main" component={MainStackNavigator} />
       )}
     </Stack.Navigator>
   );
