@@ -5,6 +5,8 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
+import {performGoogleSignIn} from '../services/googleAuth';
+import {performAppleSignIn, isAppleSignInAvailable} from '../services/appleAuth';
 
 export interface AuthUser {
   id: string;
@@ -18,6 +20,8 @@ interface AuthContextType {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   resetPassword: (email: string, newPassword: string) => Promise<void>;
@@ -79,6 +83,32 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     setUser(null);
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const result = await performGoogleSignIn();
+    const userInfo = (result as any).data ?? result;
+    setUser({
+      id: userInfo?.user?.id ?? 'google-user',
+      email: userInfo?.user?.email ?? '',
+      name: userInfo?.user?.name ?? userInfo?.user?.email?.split('@')[0] ?? 'User',
+      photoUrl: userInfo?.user?.photo ?? undefined,
+    });
+  }, []);
+
+  const signInWithApple = useCallback(async () => {
+    if (!isAppleSignInAvailable()) {
+      throw new Error('Apple Sign In is not available on this device');
+    }
+    const result = await performAppleSignIn();
+    const fullName = [result.fullName?.givenName, result.fullName?.familyName]
+      .filter(Boolean)
+      .join(' ');
+    setUser({
+      id: result.user,
+      email: result.email ?? '',
+      name: fullName || result.email?.split('@')[0] || 'User',
+    });
+  }, []);
+
   const sendPasswordReset = useCallback(async (email: string) => {
     // TODO: Replace with real API call
     // await api.post('/auth/forgot-password', { email });
@@ -101,6 +131,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
         isLoading,
         signIn,
         signUp,
+        signInWithGoogle,
+        signInWithApple,
         signOut,
         sendPasswordReset,
         resetPassword,
