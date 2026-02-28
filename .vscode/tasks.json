@@ -1,0 +1,51 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run iOS",
+			"type": "shell",
+			"command": "npx react-native run-ios",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Metro Bundler",
+			"type": "shell",
+			"command": "npx react-native start",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run iOS Simulator",
+			"type": "shell",
+			"command": "npx react-native run-ios --udid '3461974B-F09D-4EBA-9C49-BF36F09977A4'",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Metro Bundler",
+			"type": "shell",
+			"command": "npx react-native start --reset-cache",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run iOS Simulator",
+			"type": "shell",
+			"command": "npx react-native run-ios --udid '3461974B-F09D-4EBA-9C49-BF36F09977A4'",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Metro Bundler",
+			"type": "shell",
+			"command": "npx react-native start --reset-cache",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}
