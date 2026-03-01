@@ -14,10 +14,10 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {AuthStackParamList} from '../../navigation/types';
 import {Colors, Spacing, Radius, Typography} from '../../theme';
-import {Dumbbell} from 'lucide-react-native';
 import InputField from '../../components/common/InputField';
 import PrimaryButton from '../../components/common/PrimaryButton';
 import {GoogleLogo} from '../../components/common/SocialButton';
+import SocialButton from '../../components/common/SocialButton';
 import {useAuth} from '../../context/AuthContext';
 
 type Props = {
@@ -30,8 +30,9 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
 
-  const {signIn, signInWithGoogle} = useAuth();
+  const {signIn, signInWithGoogle, signInWithApple} = useAuth();
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
@@ -74,6 +75,17 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
     }
   };
 
+  const handleAppleSignIn = async () => {
+    setSocialLoading('apple');
+    try {
+      await signInWithApple();
+    } catch (error: any) {
+      Alert.alert('Apple Sign In Failed', error.message ?? 'Something went wrong.');
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
@@ -87,10 +99,6 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
 
           {/* ── Hero ── */}
           <View style={styles.hero}>
-            <View style={styles.logoContainer}>
-              <Dumbbell size={44} color={Colors.primary} strokeWidth={1.6} />
-            </View>
-            <Text style={styles.appName}>GymBuddy</Text>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>
               Sign in to continue your fitness journey
@@ -98,7 +106,7 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
           </View>
 
           {/* ── Form ── */}
-          <View style={styles.card}>
+          <View style={styles.form}>
             <InputField
               label="Email"
               placeholder="you@example.com"
@@ -136,25 +144,26 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
             </TouchableOpacity>
 
             <PrimaryButton title="Sign In" onPress={handleSignIn} loading={loading} />
+          </View>
 
-            {/* ── Divider ── */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
+          {/* ── Social ── */}
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>or continue with</Text>
+            <View style={styles.orLine} />
+          </View>
 
-            {/* ── Google ── */}
-            <TouchableOpacity
-              style={styles.googleButton}
+          <View style={styles.socialStack}>
+            <SocialButton
+              provider="google"
               onPress={handleGoogleSignIn}
-              disabled={googleLoading}
-              activeOpacity={0.85}>
-              <GoogleLogo />
-              <Text style={styles.googleButtonText}>
-                {googleLoading ? 'Signing in…' : 'Continue with Google'}
-              </Text>
-            </TouchableOpacity>
+              loading={socialLoading === 'google'}
+            />
+            <SocialButton
+              provider="apple"
+              onPress={handleAppleSignIn}
+              loading={socialLoading === 'apple'}
+            />
           </View>
 
           {/* ── Footer ── */}
@@ -189,24 +198,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xxl,
     paddingBottom: Spacing.xl,
   },
-  logoContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: Radius.xl,
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-  },
-  appName: {
-    ...Typography.label,
-    color: Colors.primary,
-    letterSpacing: 3,
-    textTransform: 'uppercase',
-    marginBottom: Spacing.sm,
-  },
   title: {
     ...Typography.h2,
     color: Colors.textPrimary,
@@ -228,6 +219,10 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginBottom: Spacing.lg,
     marginTop: -Spacing.xs,
+  },
+  form: {
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   forgotText: {
     color: Colors.primary,
@@ -281,6 +276,26 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 15,
     fontWeight: '700',
+  },
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  orText: {
+    ...Typography.bodySmall,
+    color: Colors.textMuted,
+  },
+  socialStack: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
   },
 });
 

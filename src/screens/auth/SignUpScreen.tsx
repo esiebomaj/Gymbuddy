@@ -17,6 +17,7 @@ import {Colors, Spacing, Radius, Typography} from '../../theme';
 import InputField from '../../components/common/InputField';
 import PrimaryButton from '../../components/common/PrimaryButton';
 import {GoogleLogo} from '../../components/common/SocialButton';
+import SocialButton from '../../components/common/SocialButton';
 import {useAuth} from '../../context/AuthContext';
 
 type Props = {
@@ -27,7 +28,6 @@ interface FormErrors {
   name?: string;
   email?: string;
   password?: string;
-  confirmPassword?: string;
 }
 
 interface StrengthInfo {
@@ -89,12 +89,13 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const {signUp, signInWithGoogle} = useAuth();
+  const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
+
+  const {signInWithGoogle, signInWithApple, signUp} = useAuth();
 
   const validate = (): boolean => {
     const e: FormErrors = {};
@@ -103,8 +104,6 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
     else if (!/\S+@\S+\.\S+/.test(email)) {e.email = 'Enter a valid email address';}
     if (!password) {e.password = 'Password is required';}
     else if (password.length < 6) {e.password = 'Password must be at least 6 characters';}
-    if (!confirmPassword) {e.confirmPassword = 'Please confirm your password';}
-    else if (password !== confirmPassword) {e.confirmPassword = 'Passwords do not match';}
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -121,6 +120,28 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
       Alert.alert('Sign Up Failed', error.message ?? 'Something went wrong.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setSocialLoading('google');
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      Alert.alert('Google Sign In Failed', error.message ?? 'Something went wrong.');
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  const handleAppleSignUp = async () => {
+    setSocialLoading('apple');
+    try {
+      await signInWithApple();
+    } catch (error: any) {
+      Alert.alert('Apple Sign In Failed', error.message ?? 'Something went wrong.');
+    } finally {
+      setSocialLoading(null);
     }
   };
 
@@ -151,7 +172,7 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
           </View>
 
           {/* ── Form ── */}
-          <View style={styles.card}>
+          <View style={styles.form}>
             <InputField
               label="Full Name"
               placeholder="John Doe"
@@ -183,15 +204,6 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
             />
             {password.length > 0 && <PasswordStrengthBar password={password} />}
 
-            <InputField
-              label="Confirm Password"
-              placeholder="Repeat your password"
-              value={confirmPassword}
-              onChangeText={t => { setConfirmPassword(t); clearError('confirmPassword'); }}
-              isPassword
-              error={errors.confirmPassword}
-            />
-
             <PrimaryButton
               title="Create Account"
               onPress={handleSignUp}
@@ -199,14 +211,14 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
             />
 
             {/* ── Divider ── */}
-            <View style={styles.dividerRow}>
+            {/* <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>or</Text>
               <View style={styles.dividerLine} />
-            </View>
+            </View> */}
 
             {/* ── Google ── */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.googleButton}
               onPress={async () => {
                 setGoogleLoading(true);
@@ -226,7 +238,27 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
               <Text style={styles.googleButtonText}>
                 {googleLoading ? 'Signing up…' : 'Continue with Google'}
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+          </View>
+
+          {/* ── Social ── */}
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>or continue with</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          <View style={styles.socialStack}>
+            <SocialButton
+              provider="google"
+              onPress={handleGoogleSignUp}
+              loading={socialLoading === 'google'}
+            />
+            <SocialButton
+              provider="apple"
+              onPress={handleAppleSignUp}
+              loading={socialLoading === 'apple'}
+            />
           </View>
 
           {/* ── Footer ── */}
@@ -304,6 +336,10 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     letterSpacing: 0.3,
   },
+  form: {
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -312,6 +348,26 @@ const styles = StyleSheet.create({
   },
   footerText: {color: Colors.textSecondary, fontSize: 15},
   footerLink: {color: Colors.primary, fontSize: 15, fontWeight: '700'},
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  orText: {
+    ...Typography.bodySmall,
+    color: Colors.textMuted,
+  },
+  socialStack: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
 });
 
 export default SignUpScreen;

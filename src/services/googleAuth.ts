@@ -4,20 +4,23 @@ import {
 } from '@react-native-google-signin/google-signin';
 
 /**
- * Configure Google Sign-In
- * TODO: Replace 'YOUR_WEB_CLIENT_ID' with your actual client ID from
+ * Configure Google Sign-In lazily (called once before first use).
+ * Replace 'YOUR_WEB_CLIENT_ID' with your actual client ID from
  * Google Cloud Console (https://console.cloud.google.com) or Firebase.
- * Also update ios/GymBuddy/Info.plist CFBundleURLSchemes with your
- * reversed iOS client ID (e.g. com.googleusercontent.apps.YOUR_IOS_CLIENT_ID)
  */
-GoogleSignin.configure({
-  webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
-  // iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
-  // offlineAccess: true,
-  // scopes: ['profile', 'email'],
-});
+let configured = false;
+const ensureConfigured = () => {
+  if (!configured) {
+    GoogleSignin.configure({
+      webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+      // iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
+    });
+    configured = true;
+  }
+};
 
 export const performGoogleSignIn = async () => {
+  ensureConfigured();
   try {
     await GoogleSignin.hasPlayServices({showPlayServicesUpdateDialog: true});
     const userInfo = await GoogleSignin.signIn();

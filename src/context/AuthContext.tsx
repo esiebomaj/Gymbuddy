@@ -14,6 +14,7 @@ GoogleSignin.configure({
   webClientId: GOOGLE_WEB_CLIENT_ID,
   iosClientId: GOOGLE_IOS_CLIENT_ID,
 });
+import {performAppleSignIn, isAppleSignInAvailable} from '../services/appleAuth';
 
 export interface AuthUser {
   id: string;
@@ -30,6 +31,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   completeOnboarding: () => Promise<void>;
@@ -136,6 +138,34 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     }
   }, []);
 
+
+  const signInWithApple = useCallback(async () => {
+    if (!isAppleSignInAvailable()) {
+      throw new Error('Apple Sign In is not available on this device');
+    }
+
+    const result = await performAppleSignIn();
+
+    const {error} = await supabase.auth.signInWithIdToken({
+      provider: 'apple',
+      token: result.identityToken!,
+      nonce: result.nonce!,
+    });
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const fullName = [result.fullName?.givenName, result.fullName?.familyName]
+      .filter(Boolean)
+      .join(' ');
+
+    if (fullName) {
+      await supabase.auth.updateUser({
+        data: {full_name: fullName},
+      });
+    }
+  }, []);
+
   const sendPasswordReset = useCallback(async (email: string) => {
     const {error} = await supabase.auth.resetPasswordForEmail(email);
     if (error) {
@@ -163,6 +193,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
         signIn,
         signUp,
         signInWithGoogle,
+        signInWithApple,
         signOut,
         sendPasswordReset,
         completeOnboarding,
