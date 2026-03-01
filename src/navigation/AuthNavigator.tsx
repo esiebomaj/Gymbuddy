@@ -4,7 +4,6 @@ import {AuthStackParamList} from './types';
 import {Colors} from '../theme';
 import SignInScreen from '../screens/auth/SignInScreen';
 import SignUpScreen from '../screens/auth/SignUpScreen';
-import OnboardingScreen from '../screens/auth/OnboardingScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
 
@@ -19,7 +18,6 @@ const AuthNavigator: React.FC = () => (
     }}>
     <Stack.Screen name="SignIn" component={SignInScreen} />
     <Stack.Screen name="SignUp" component={SignUpScreen} />
-    <Stack.Screen name="Onboarding" component={OnboardingScreen} />
     <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
   </Stack.Navigator>

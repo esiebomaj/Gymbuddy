@@ -9,9 +9,6 @@ import {
   Alert,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RouteProp} from '@react-navigation/native';
-import {AuthStackParamList} from '../../navigation/types';
 import {Colors, Spacing, Radius, Typography} from '../../theme';
 import {useAuth} from '../../context/AuthContext';
 import {useLock} from '../../context/LockContext';
@@ -24,11 +21,6 @@ import {
   ChevronRight,
   Check,
 } from 'lucide-react-native';
-
-type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'Onboarding'>;
-  route: RouteProp<AuthStackParamList, 'Onboarding'>;
-};
 
 const DAYS = [
   {label: 'Mo', full: 'Monday', value: 1},
@@ -49,9 +41,8 @@ const HOURS = Array.from({length: 18}, (_, i) => {
 
 const TOTAL_STEPS = 3;
 
-const OnboardingScreen: React.FC<Props> = ({navigation, route}) => {
-  const {name, email, password} = route.params;
-  const {signUp} = useAuth();
+const OnboardingScreen: React.FC = () => {
+  const {completeOnboarding} = useAuth();
   const {selectApps, setGymDays, setLockTimes, requestAuthorization} = useLock();
 
   const [step, setStep] = useState(0);
@@ -84,7 +75,7 @@ const OnboardingScreen: React.FC<Props> = ({navigation, route}) => {
     try {
       setGymDays(selectedDays);
       setLockTimes(startTime, endTime);
-      await signUp(name, email, password);
+      await completeOnboarding();
     } catch (error: any) {
       Alert.alert('Error', error.message ?? 'Something went wrong.');
       setLoading(false);

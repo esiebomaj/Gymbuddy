@@ -16,6 +16,7 @@ import {AuthStackParamList} from '../../navigation/types';
 import {Colors, Spacing, Radius, Typography} from '../../theme';
 import InputField from '../../components/common/InputField';
 import PrimaryButton from '../../components/common/PrimaryButton';
+import {GoogleLogo} from '../../components/common/SocialButton';
 import SocialButton from '../../components/common/SocialButton';
 import {useAuth} from '../../context/AuthContext';
 
@@ -28,6 +29,7 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
 
   const {signIn, signInWithGoogle, signInWithApple} = useAuth();
@@ -61,13 +63,15 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
   };
 
   const handleGoogleSignIn = async () => {
-    setSocialLoading('google');
+    setGoogleLoading(true);
     try {
       await signInWithGoogle();
     } catch (error: any) {
-      Alert.alert('Google Sign In Failed', error.message ?? 'Something went wrong.');
+      if (error.code !== 'SIGN_IN_CANCELLED') {
+        Alert.alert('Google Sign In Failed', error.message ?? 'Something went wrong.');
+      }
     } finally {
-      setSocialLoading(null);
+      setGoogleLoading(false);
     }
   };
 
@@ -224,6 +228,39 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 14,
     fontWeight: '500',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    ...Typography.bodySmall,
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 54,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: Spacing.sm,
+  },
+  googleButtonText: {
+    ...Typography.h4,
+    color: Colors.textPrimary,
+    letterSpacing: 0.3,
   },
   footer: {
     flexDirection: 'row',

@@ -1,7 +1,6 @@
 export type AuthStackParamList = {
   SignIn: undefined;
   SignUp: undefined;
-  Onboarding: { name: string; email: string; password: string };
   ForgotPassword: undefined;
   ResetPassword: { email: string };
 };
@@ -19,5 +18,6 @@ export type MainStackParamList = {
 
 export type RootStackParamList = {
   Auth: undefined;
+  Onboarding: undefined;
   Main: undefined;
 };
