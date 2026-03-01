@@ -8,8 +8,11 @@ import {
   TextInput,
   StatusBar,
   Alert,
+  Image,
+  Platform,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {launchCamera, type CameraOptions} from 'react-native-image-picker';
 import {Colors, Spacing, Radius, Typography} from '../../theme';
 import {useLock} from '../../context/LockContext';
 import PrimaryButton from '../../components/common/PrimaryButton';
@@ -41,19 +44,33 @@ const ProofSubmissionScreen: React.FC = () => {
   const isLocked = status === 'locked';
   const canSubmit = selectedWorkout !== null && photoTaken;
 
-  // TODO: Replace with actual camera launch once react-native-image-picker is installed
-  const handleTakePhoto = () => {
-    Alert.alert(
-      'Take Gym Photo',
-      'In production this opens the camera. For now we\'ll simulate a photo capture.',
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Simulate Photo',
-          onPress: () => setPhotoTaken(true),
-        },
-      ],
-    );
+  const cameraOpts: CameraOptions = {
+    mediaType: 'photo',
+    cameraType: 'back',
+    quality: 0.8,
+    maxWidth: 1280,
+    maxHeight: 1280,
+    saveToPhotos: false,
+  };
+
+  const handleTakePhoto = async () => {
+    const result = await launchCamera(cameraOpts);
+    if (result.didCancel || result.errorCode) {
+      if (result.errorCode === 'camera_unavailable') {
+        Alert.alert('Camera Unavailable', 'This device does not have a camera.');
+      } else if (result.errorCode === 'permission') {
+        Alert.alert(
+          'Permission Denied',
+          'Please enable camera access in Settings to take gym photos.',
+        );
+      }
+      return;
+    }
+    const asset = result.assets?.[0];
+    if (asset?.uri) {
+      setPhotoUri(asset.uri);
+      setPhotoTaken(true);
+    }
   };
 
   const handleSubmit = async () => {
@@ -140,12 +157,13 @@ const ProofSubmissionScreen: React.FC = () => {
             style={[styles.photoBox, photoTaken && styles.photoBoxDone]}
             onPress={handleTakePhoto}
             activeOpacity={0.75}>
-            {photoTaken ? (
-              <>
-                <Text style={styles.photoCheckmark}>✅</Text>
-                <Text style={styles.photoBoxDoneText}>Photo captured!</Text>
-                <Text style={styles.photoBoxRetakeText}>Tap to retake</Text>
-              </>
+            {photoTaken && photoUri ? (
+              <View style={styles.photoPreviewWrapper}>
+                <Image source={{uri: photoUri}} style={styles.photoPreview} />
+                <View style={styles.photoOverlay}>
+                  <Text style={styles.photoOverlayText}>Tap to change</Text>
+                </View>
+              </View>
             ) : (
               <>
                 <Text style={styles.photoCameraIcon}>📷</Text>
@@ -338,9 +356,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: Spacing.lg,
   },
-  photoCheckmark: {fontSize: 36},
-  photoBoxDoneText: {...Typography.h4, color: Colors.success},
-  photoBoxRetakeText: {...Typography.bodySmall, color: Colors.textMuted},
+  photoPreviewWrapper: {
+    width: '100%',
+    height: '100%',
+    borderRadius: Radius.md - 1,
+    overflow: 'hidden',
+  },
+  photoPreview: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  photoOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingVertical: Spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+  },
+  photoOverlayText: {
+    ...Typography.bodySmall,
+    color: '#fff',
+    fontWeight: '600',
+  },
 
   // Workout pills
   pillGrid: {
