@@ -30,27 +30,26 @@ const WORKOUT_TYPES = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const ProofSubmissionScreen: React.FC = () => {
-  const {status, isLoading, unlockApps} = useLock();
+  const {status, isLoading, submitProof} = useLock();
 
   const [selectedWorkout, setSelectedWorkout] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [photoTaken, setPhotoTaken] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | undefined>();
   const [submitted, setSubmitted] = useState(false);
 
   const isLocked = status === 'locked';
   const canSubmit = selectedWorkout !== null && photoTaken;
 
-  // ── Simulate photo capture (ready for react-native-image-picker) ──
+  // TODO: Replace with actual camera launch once react-native-image-picker is installed
   const handleTakePhoto = () => {
-    // TODO: Replace with actual camera launch once react-native-image-picker is installed:
-    // launchCamera({ mediaType: 'photo', quality: 0.8 }, response => { ... })
     Alert.alert(
-      'Take Gym Photo 📸',
+      'Take Gym Photo',
       'In production this opens the camera. For now we\'ll simulate a photo capture.',
       [
         {text: 'Cancel', style: 'cancel'},
         {
-          text: 'Simulate Photo ✅',
+          text: 'Simulate Photo',
           onPress: () => setPhotoTaken(true),
         },
       ],
@@ -58,12 +57,17 @@ const ProofSubmissionScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!isLocked) {
-      Alert.alert('Not Locked', 'Your apps are not currently locked.');
-      return;
+    if (!selectedWorkout) {return;}
+    try {
+      await submitProof(
+        selectedWorkout,
+        note.trim() || undefined,
+        photoUri,
+      );
+      setSubmitted(true);
+    } catch {
+      // submitProof already shows alerts for errors (409, network, etc.)
     }
-    await unlockApps();
-    setSubmitted(true);
   };
 
   // ── Success screen ──

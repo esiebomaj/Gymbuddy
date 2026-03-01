@@ -7,30 +7,40 @@ import React, {
   useEffect,
 } from 'react';
 import {NativeModules, Alert} from 'react-native';
+import {useAuth} from './AuthContext';
+import {
+  fetchSettings,
+  fetchStats,
+  updateSettings as apiUpdateSettings,
+  submitVisit,
+  ApiError,
+} from '../services/api';
+import type {
+  StatsResponse,
+  SettingsResponse,
+  SettingsUpdate,
+} from '../services/api';
 
 const {ScreenTimeManager} = NativeModules;
 
-// ── Week tracking utilities ───────────────────────────────────────────────────
-const getWeekStart = (date: Date): string => {
-  const d = new Date(date);
-  const day = d.getDay(); // 0 = Sunday
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // shift to Monday
-  d.setDate(diff);
-  return d.toISOString().split('T')[0]; // YYYY-MM-DD
-};
-
-const getWeeklyVisitCount = (dates: string[]): number => {
-  const weekStart = getWeekStart(new Date());
-  const wStart = new Date(weekStart + 'T00:00:00');
-  const wEnd = new Date(weekStart + 'T00:00:00');
-  wEnd.setDate(wEnd.getDate() + 6);
-  return dates.filter(d => {
-    const dt = new Date(d + 'T00:00:00');
-    return dt >= wStart && dt <= wEnd;
-  }).length;
-};
-
 export type LockStatus = 'unauthorized' | 'idle' | 'locked' | 'unlocked';
+
+const DEFAULT_SETTINGS: SettingsResponse = {
+  weekly_goal: 3,
+  gym_days: [1, 2, 3, 4, 5],
+  lock_start_time: '06:00',
+  lock_end_time: '22:00',
+};
+
+const DEFAULT_STATS: StatsResponse = {
+  weekly_visits: 0,
+  weekly_goal: 3,
+  current_streak: 0,
+  longest_streak: 0,
+  total_visits: 0,
+  visited_today: false,
+  visit_dates_this_week: [],
+};
 
 export interface LockContextType {
   status: LockStatus;
@@ -39,20 +49,15 @@ export interface LockContextType {
   elapsedSeconds: number;
   screenTimeAuthorized: boolean;
   isLoading: boolean;
-  weeklyGoal: number;
-  weeklyVisits: number;
-  gymVisitDates: string[];
-  currentStreak: number;
-  gymDays: number[];
-  lockStartTime: string;
-  lockEndTime: string;
-  setWeeklyGoal: (days: number) => void;
-  setGymDays: (days: number[]) => void;
-  setLockTimes: (start: string, end: string) => void;
+  settings: SettingsResponse;
+  stats: StatsResponse;
+  updateSettings: (patch: SettingsUpdate) => Promise<void>;
   requestAuthorization: () => Promise<void>;
   selectApps: () => Promise<void>;
   lockApps: () => Promise<void>;
   unlockApps: () => Promise<void>;
+  submitProof: (workoutType: string, note?: string, photoUri?: string) => Promise<void>;
+  refreshStats: () => Promise<void>;
 }
 
 const LockContext = createContext<LockContextType | undefined>(undefined);
@@ -66,6 +71,9 @@ export const useLock = (): LockContextType => {
 export const LockProvider: React.FC<{children: React.ReactNode}> = ({
   children,
 }) => {
+  const {session} = useAuth();
+  const token = session?.access_token;
+
   const [status, setStatus] = useState<LockStatus>('unauthorized');
   const [selectedAppCount, setSelectedAppCount] = useState(0);
   const [lockedAt, setLockedAt] = useState<Date | null>(null);
@@ -73,14 +81,37 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
   const [screenTimeAuthorized, setScreenTimeAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [weeklyGoal, setWeeklyGoalState] = useState(3);
-  const [gymVisitDates, setGymVisitDates] = useState<string[]>([]);
-  const [currentStreak, setCurrentStreak] = useState(0);
-  const [gymDays, setGymDaysState] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [lockStartTime, setLockStartTime] = useState('06:00');
-  const [lockEndTime, setLockEndTime] = useState('22:00');
 
-  // Tick elapsed time while locked
+  const [settings, setSettings] = useState<SettingsResponse>(DEFAULT_SETTINGS);
+  const [stats, setStats] = useState<StatsResponse>(DEFAULT_STATS);
+
+  // ── Hydrate from backend on session change ─────────────────────────────────
+
+  useEffect(() => {
+    if (!token) {return;}
+
+    let cancelled = false;
+
+    const hydrate = async () => {
+      try {
+        const [s, st] = await Promise.all([
+          fetchSettings(token),
+          fetchStats(token),
+        ]);
+        if (cancelled) {return;}
+        setSettings(s);
+        setStats(st);
+      } catch {
+        // Silently fail — settings may not exist yet during onboarding
+      }
+    };
+
+    hydrate();
+    return () => { cancelled = true; };
+  }, [token]);
+
+  // ── Tick elapsed time while locked ─────────────────────────────────────────
+
   useEffect(() => {
     if (status === 'locked' && lockedAt) {
       timerRef.current = setInterval(() => {
@@ -100,6 +131,34 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
     };
   }, [status, lockedAt]);
 
+  // ── Refresh stats from backend ─────────────────────────────────────────────
+
+  const refreshStats = useCallback(async () => {
+    if (!token) {return;}
+    try {
+      setStats(await fetchStats(token));
+    } catch {
+      // Non-critical — dashboard will show stale data
+    }
+  }, [token]);
+
+  // ── Settings mutation (optimistic update + persist) ────────────────────────
+
+  const updateSettings = useCallback(async (patch: SettingsUpdate) => {
+    const prevSettings = settings;
+    setSettings(prev => ({...prev, ...patch}));
+    if (!token) {return;}
+    try {
+      const updated = await apiUpdateSettings(token, patch);
+      setSettings(updated);
+    } catch (e: any) {
+      setSettings(prevSettings); // revert if it failed
+      Alert.alert('Update Failed', e.message);
+    }
+  }, [token, settings]);
+
+  // ── Screen Time operations ─────────────────────────────────────────────────
+
   const requestAuthorization = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -118,7 +177,6 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       const count = await ScreenTimeManager.showAppPicker();
       setSelectedAppCount(count);
-      // Auto-lock immediately — apps stay locked until gym proof is submitted
       if (count > 0) {
         await ScreenTimeManager.lockApps();
         setStatus('locked');
@@ -133,10 +191,7 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
 
   const lockApps = useCallback(async () => {
     if (selectedAppCount === 0) {
-      Alert.alert(
-        'No Apps Selected',
-        'Please select apps to lock first.',
-      );
+      Alert.alert('No Apps Selected', 'Please select apps to lock first.');
       return;
     }
     setIsLoading(true);
@@ -157,38 +212,46 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
       await ScreenTimeManager.unlockApps();
       setStatus('unlocked');
       setLockedAt(null);
-      // Record today as a gym visit (one entry per day max)
-      const today = new Date().toISOString().split('T')[0];
-      setGymVisitDates(prev => {
-        if (prev.includes(today)) {return prev;}
-        const updated = [...prev, today];
-        // Completing the weekly goal increments the streak
-        if (getWeeklyVisitCount(updated) === weeklyGoal) {
-          setCurrentStreak(s => s + 1);
-        }
-        return updated;
-      });
     } catch (e: any) {
       Alert.alert('Unlock Error', e.message);
     } finally {
       setIsLoading(false);
     }
-  }, [weeklyGoal]);
-
-  const weeklyVisits = getWeeklyVisitCount(gymVisitDates);
-
-  const setWeeklyGoal = useCallback((days: number) => {
-    setWeeklyGoalState(Math.max(1, Math.min(7, days)));
   }, []);
 
-  const setGymDays = useCallback((days: number[]) => {
-    setGymDaysState(days);
-  }, []);
+  // ── Submit proof (API + unlock + refresh) ──────────────────────────────────
 
-  const setLockTimes = useCallback((start: string, end: string) => {
-    setLockStartTime(start);
-    setLockEndTime(end);
-  }, []);
+  const submitProof = useCallback(async (
+    workoutType: string,
+    note?: string,
+    photoUri?: string,
+  ) => {
+    if (!token) {
+      Alert.alert('Not Signed In', 'Please sign in to submit proof.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await submitVisit(token, workoutType, note, photoUri);
+
+      if (status === 'locked') {
+        await ScreenTimeManager.unlockApps();
+        setStatus('unlocked');
+        setLockedAt(null);
+      }
+
+      await refreshStats();
+    } catch (e: any) {
+      if (e instanceof ApiError && e.status === 409) {
+        Alert.alert('Already Logged', 'You already submitted a gym visit for today.');
+      } else {
+        Alert.alert('Submission Failed', e.message);
+      }
+      throw e;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token, status, refreshStats]);
 
   return (
     <LockContext.Provider
@@ -199,20 +262,15 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
         elapsedSeconds,
         screenTimeAuthorized,
         isLoading,
-        weeklyGoal,
-        weeklyVisits,
-        gymVisitDates,
-        currentStreak,
-        gymDays,
-        lockStartTime,
-        lockEndTime,
-        setWeeklyGoal,
-        setGymDays,
-        setLockTimes,
+        settings,
+        stats,
+        updateSettings,
         requestAuthorization,
         selectApps,
         lockApps,
         unlockApps,
+        submitProof,
+        refreshStats,
       }}>
       {children}
     </LockContext.Provider>

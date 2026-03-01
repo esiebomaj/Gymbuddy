@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback} from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   StatusBar,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {CompositeNavigationProp} from '@react-navigation/native';
+import {CompositeNavigationProp, useFocusEffect} from '@react-navigation/native';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Smartphone, Settings as SettingsIcon, Camera} from 'lucide-react-native';
@@ -61,15 +61,13 @@ const statusConfig = {
 
 const DashboardScreen: React.FC<Props> = ({navigation}) => {
   const {user} = useAuth();
-  const {
-    status,
-    selectedAppCount,
-    elapsedSeconds,
-    requestAuthorization,
-    weeklyGoal,
-    weeklyVisits,
-    currentStreak,
-  } = useLock();
+  const {status, selectedAppCount, elapsedSeconds, stats, refreshStats} = useLock();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshStats();
+    }, [refreshStats]),
+  );
 
   const cfg = statusConfig[status];
 
@@ -116,11 +114,11 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
           {/* Header */}
           <View style={styles.streakHeader}>
             <Text style={styles.streakSectionLabel}>THIS WEEK</Text>
-            <View style={[styles.streakBadge, currentStreak === 0 && styles.streakBadgeDim]}>
+            <View style={[styles.streakBadge, stats.current_streak === 0 && styles.streakBadgeDim]}>
               <Text style={styles.streakBadgeText}>
-                {currentStreak > 0
-                  ? `🔥 ${currentStreak} week${currentStreak !== 1 ? 's' : ''}`
-                  : weeklyVisits > 0
+                {stats.current_streak > 0
+                  ? `🔥 ${stats.current_streak} week${stats.current_streak !== 1 ? 's' : ''}`
+                  : stats.weekly_visits > 0
                   ? '💪 Keep going!'
                   : '🎯 Start this week'}
               </Text>
@@ -129,19 +127,19 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
 
           {/* Progress dots */}
           <View style={styles.dotsRow}>
-            {Array.from({length: weeklyGoal}).map((_, i) => (
+            {Array.from({length: stats.weekly_goal}).map((_, i) => (
               <View
                 key={i}
-                style={[styles.dot, i < weeklyVisits ? styles.dotFilled : styles.dotEmpty]}
+                style={[styles.dot, i < stats.weekly_visits ? styles.dotFilled : styles.dotEmpty]}
               />
             ))}
           </View>
 
           {/* Count */}
           <View style={styles.streakCountRow}>
-            <Text style={styles.streakVisits}>{weeklyVisits}</Text>
+            <Text style={styles.streakVisits}>{stats.weekly_visits}</Text>
             <Text style={styles.streakSep}> / </Text>
-            <Text style={styles.streakGoalNum}>{weeklyGoal}</Text>
+            <Text style={styles.streakGoalNum}>{stats.weekly_goal}</Text>
             <Text style={styles.streakCountLabel}> visits this week</Text>
           </View>
 
@@ -150,14 +148,18 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
         {/* ── Stats Row ── */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
+            <Text style={styles.statValue}>{stats.total_visits}</Text>
+            <Text style={styles.statLabel}>Total Visits</Text>
+          </View>
+          <View style={[styles.statCard, styles.statDivider]}>
             <Text style={styles.statValue}>{selectedAppCount}</Text>
             <Text style={styles.statLabel}>Apps Selected</Text>
           </View>
           <View style={[styles.statCard, styles.statDivider]}>
             <Text style={styles.statValue}>
-              {status === 'locked' ? formatElapsed(elapsedSeconds) : '—'}
+              {status === 'locked' ? formatElapsed(elapsedSeconds) : stats.visited_today ? '✓' : '—'}
             </Text>
-            <Text style={styles.statLabel}>Time Locked</Text>
+            <Text style={styles.statLabel}>{status === 'locked' ? 'Time Locked' : 'Today'}</Text>
           </View>
         </View>
 

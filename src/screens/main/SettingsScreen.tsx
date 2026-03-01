@@ -54,9 +54,9 @@ const Separator = () => <View style={styles.separator} />;
 
 const SettingsScreen: React.FC = () => {
   const {user, signOut} = useAuth();
-  const {weeklyGoal, setWeeklyGoal, currentStreak, gymVisitDates} = useLock();
-
-  const totalVisits = gymVisitDates.length;
+  const {settings, stats, updateSettings} = useLock();
+  const {weekly_goal} = settings;
+  const {current_streak, longest_streak, total_visits} = stats;
 
   const handleSignOut = () => {
     Alert.alert(
@@ -103,19 +103,19 @@ const SettingsScreen: React.FC = () => {
             rightElement={
               <View style={styles.stepper}>
                 <TouchableOpacity
-                  style={[styles.stepBtn, weeklyGoal <= 1 && styles.stepBtnDisabled]}
-                  onPress={() => setWeeklyGoal(weeklyGoal - 1)}
-                  disabled={weeklyGoal <= 1}
+                  style={[styles.stepBtn, weekly_goal <= 1 && styles.stepBtnDisabled]}
+                  onPress={() => updateSettings({weekly_goal: weekly_goal - 1})}
+                  disabled={weekly_goal <= 1}
                   activeOpacity={0.7}>
                   <Text style={styles.stepBtnText}>−</Text>
                 </TouchableOpacity>
                 <Text style={styles.stepValue}>
-                  {weeklyGoal} day{weeklyGoal !== 1 ? 's' : ''}
+                  {weekly_goal} day{weekly_goal !== 1 ? 's' : ''}
                 </Text>
                 <TouchableOpacity
-                  style={[styles.stepBtn, weeklyGoal >= 7 && styles.stepBtnDisabled]}
-                  onPress={() => setWeeklyGoal(weeklyGoal + 1)}
-                  disabled={weeklyGoal >= 7}
+                  style={[styles.stepBtn, weekly_goal >= 7 && styles.stepBtnDisabled]}
+                  onPress={() => updateSettings({weekly_goal: weekly_goal + 1})}
+                  disabled={weekly_goal >= 7}
                   activeOpacity={0.7}>
                   <Text style={styles.stepBtnText}>+</Text>
                 </TouchableOpacity>
@@ -130,13 +130,19 @@ const SettingsScreen: React.FC = () => {
           <SettingRow
             icon={<Flame size={20} color="#FF6B35" strokeWidth={1.8} />}
             label="Current streak"
-            value={`${currentStreak} week${currentStreak !== 1 ? 's' : ''}`}
+            value={`${current_streak} week${current_streak !== 1 ? 's' : ''}`}
+          />
+          <Separator />
+          <SettingRow
+            icon={<Target size={20} color={Colors.primary} strokeWidth={1.8} />}
+            label="Longest streak"
+            value={`${longest_streak} week${longest_streak !== 1 ? 's' : ''}`}
           />
           <Separator />
           <SettingRow
             icon={<Dumbbell size={20} color={Colors.textSecondary} strokeWidth={1.8} />}
             label="Total gym visits"
-            value={`${totalVisits}`}
+            value={`${total_visits}`}
           />
         </View>
 
