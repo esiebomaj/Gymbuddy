@@ -43,7 +43,7 @@ const TOTAL_STEPS = 3;
 
 const OnboardingScreen: React.FC = () => {
   const {completeOnboarding} = useAuth();
-  const {selectApps, setGymDays, setLockTimes, requestAuthorization} = useLock();
+  const {selectApps, updateSettings: updateLockSettings, requestAuthorization} = useLock();
 
   const [step, setStep] = useState(0);
   const [appsSelected, setAppsSelected] = useState(false);
@@ -73,8 +73,12 @@ const OnboardingScreen: React.FC = () => {
     if (loading) {return;}
     setLoading(true);
     try {
-      setGymDays(selectedDays);
-      setLockTimes(startTime, endTime);
+      await updateLockSettings({
+        weekly_goal: selectedDays.length,
+        gym_days: selectedDays,
+        lock_start_time: startTime,
+        lock_end_time: endTime,
+      });
       await completeOnboarding();
     } catch (error: any) {
       Alert.alert('Error', error.message ?? 'Something went wrong.');
