@@ -39,12 +39,12 @@ export const Radius = {
 } as const;
 
 export const Typography = {
-  h1: { fontSize: 34, fontWeight: '700' as const, letterSpacing: -0.5 },
-  h2: { fontSize: 26, fontWeight: '700' as const, letterSpacing: -0.3 },
-  h3: { fontSize: 20, fontWeight: '600' as const },
-  h4: { fontSize: 17, fontWeight: '600' as const },
-  body: { fontSize: 15, fontWeight: '400' as const },
-  bodySmall: { fontSize: 13, fontWeight: '400' as const },
-  label: { fontSize: 12, fontWeight: '500' as const, letterSpacing: 0.5 },
-  caption: { fontSize: 11, fontWeight: '400' as const },
+  h1: { fontSize: 38, fontWeight: '700' as const, letterSpacing: -0.5 },
+  h2: { fontSize: 30, fontWeight: '700' as const, letterSpacing: -0.3 },
+  h3: { fontSize: 22, fontWeight: '600' as const },
+  h4: { fontSize: 18, fontWeight: '600' as const },
+  body: { fontSize: 17, fontWeight: '400' as const },
+  bodySmall: { fontSize: 15, fontWeight: '400' as const },
+  label: { fontSize: 13, fontWeight: '500' as const, letterSpacing: 0.5 },
+  caption: { fontSize: 12, fontWeight: '400' as const },
 } as const;

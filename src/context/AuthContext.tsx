@@ -9,11 +9,6 @@ import {supabase} from '../lib/supabase';
 import {Session, User} from '@supabase/supabase-js';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID} from '@env';
-
-GoogleSignin.configure({
-  webClientId: GOOGLE_WEB_CLIENT_ID,
-  iosClientId: GOOGLE_IOS_CLIENT_ID,
-});
 import {performAppleSignIn, isAppleSignInAvailable} from '../services/appleAuth';
 
 export interface AuthUser {
@@ -78,6 +73,11 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
   };
 
   useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+      iosClientId: GOOGLE_IOS_CLIENT_ID,
+    });
+
     supabase.auth.getSession().then(({data: {session: s}}) => {
       handleSession(s);
       setIsLoading(false);

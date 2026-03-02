@@ -5,11 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   StatusBar,
   Alert,
   Image,
-  Platform,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {launchCamera, type CameraOptions} from 'react-native-image-picker';
@@ -17,32 +15,27 @@ import {Colors, Spacing, Radius, Typography} from '../../theme';
 import {useLock} from '../../context/LockContext';
 import PrimaryButton from '../../components/common/PrimaryButton';
 
-// ── Workout types ─────────────────────────────────────────────────────────────
-
-const WORKOUT_TYPES = [
-  {id: 'weights', label: 'Weights', icon: '💪'},
-  {id: 'cardio', label: 'Cardio', icon: '🏃'},
-  {id: 'yoga', label: 'Yoga', icon: '🧘'},
-  {id: 'boxing', label: 'Boxing', icon: '🥊'},
-  {id: 'cycling', label: 'Cycling', icon: '🚴'},
-  {id: 'swimming', label: 'Swimming', icon: '🏊'},
-  {id: 'hiit', label: 'HIIT', icon: '🔥'},
-  {id: 'other', label: 'Other', icon: '🏋️'},
-];
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const ProofSubmissionScreen: React.FC = () => {
-  const {status, isLoading, submitProof} = useLock();
+  const {status, isLoading, submitProof, settings} = useLock();
 
-  const [selectedWorkout, setSelectedWorkout] = useState<string | null>(null);
-  const [note, setNote] = useState('');
   const [photoTaken, setPhotoTaken] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | undefined>();
   const [submitted, setSubmitted] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const isLocked = status === 'locked';
-  const canSubmit = selectedWorkout !== null && photoTaken;
+  const isUnlocked = status === 'unlocked';
+
+  // Format the next lock time from settings for display
+  const nextLockTime = (() => {
+    const t = settings.lock_start_time ?? '06:00';
+    const h = parseInt(t.split(':')[0], 10);
+    const suffix = h < 12 ? 'AM' : 'PM';
+    const disp = h === 0 ? 12 : h === 12 ? 12 : h > 12 ? h - 12 : h;
+    return `${disp}:00 ${suffix}`;
+  })();
 
   const cameraOpts: CameraOptions = {
     mediaType: 'photo',
@@ -74,44 +67,47 @@ const ProofSubmissionScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedWorkout) {return;}
     try {
-      await submitProof(
-        selectedWorkout,
-        note.trim() || undefined,
-        photoUri,
-      );
+      await submitProof('other', undefined, photoUri);
       setSubmitted(true);
+      setShowForm(false);
     } catch {
-      // submitProof already shows alerts for errors (409, network, etc.)
+      // submitProof already shows the error alert — clear the photo so user retakes
+      setPhotoTaken(false);
+      setPhotoUri(undefined);
     }
   };
 
-  // ── Success screen ──
-  if (submitted) {
+  const handleLogAnother = () => {
+    setPhotoTaken(false);
+    setPhotoUri(undefined);
+    setSubmitted(false);
+    setShowForm(true);
+  };
+
+  // ── Unlocked confirmation (shown when already unlocked today, or just submitted) ──
+  if ((isUnlocked || submitted) && !showForm) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
         <View style={styles.successContainer}>
           <Text style={styles.successEmoji}>🏆</Text>
-          <Text style={styles.successTitle}>Proof Accepted!</Text>
+          <Text style={styles.successTitle}>Apps Unlocked!</Text>
           <Text style={styles.successDesc}>
-            Your workout has been logged and your apps are unlocked for today. Keep up the grind!
+            You've proven you hit the gym today. Your apps stay unlocked until tomorrow.
           </Text>
-          <View style={styles.successDetails}>
-            <Text style={styles.successDetailText}>
-              {WORKOUT_TYPES.find(w => w.id === selectedWorkout)?.icon}{' '}
-              {WORKOUT_TYPES.find(w => w.id === selectedWorkout)?.label} session logged
-            </Text>
-            {note.trim() !== '' && (
-              <Text style={styles.successNote}>"{note.trim()}"</Text>
-            )}
+
+          <View style={styles.nextLockCard}>
+            <Text style={styles.nextLockLabel}>NEXT LOCK</Text>
+            <Text style={styles.nextLockTime}>Tomorrow · {nextLockTime}</Text>
           </View>
-          <PrimaryButton
-            title="Back to Dashboard"
-            onPress={() => setSubmitted(false)}
-            style={styles.successButton}
-          />
+
+          <TouchableOpacity
+            style={styles.logAnotherBtn}
+            onPress={handleLogAnother}
+            activeOpacity={0.7}>
+            <Text style={styles.logAnotherText}>Log another workout →</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -143,7 +139,7 @@ const ProofSubmissionScreen: React.FC = () => {
           </View>
         )}
 
-        {/* ── Step 1: Photo ── */}
+        {/* ── Photo ── */}
         <View style={styles.stepCard}>
           <View style={styles.stepHeader}>
             <View style={[styles.stepBadge, photoTaken && styles.stepBadgeDone]}>
@@ -176,83 +172,15 @@ const ProofSubmissionScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* ── Step 2: Workout type ── */}
-        <View style={styles.stepCard}>
-          <View style={styles.stepHeader}>
-            <View style={[styles.stepBadge, selectedWorkout !== null && styles.stepBadgeDone]}>
-              <Text style={styles.stepBadgeText}>
-                {selectedWorkout !== null ? '✓' : '2'}
-              </Text>
-            </View>
-            <Text style={styles.stepTitle}>Workout Type</Text>
-            <Text style={styles.stepRequired}>Required</Text>
-          </View>
-
-          <View style={styles.pillGrid}>
-            {WORKOUT_TYPES.map(w => {
-              const selected = selectedWorkout === w.id;
-              return (
-                <TouchableOpacity
-                  key={w.id}
-                  style={[styles.pill, selected && styles.pillSelected]}
-                  onPress={() => setSelectedWorkout(w.id)}
-                  activeOpacity={0.7}>
-                  <Text style={styles.pillIcon}>{w.icon}</Text>
-                  <Text style={[styles.pillLabel, selected && styles.pillLabelSelected]}>
-                    {w.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* ── Step 3: Note (optional) ── */}
-        <View style={styles.stepCard}>
-          <View style={styles.stepHeader}>
-            <View style={styles.stepBadge}>
-              <Text style={styles.stepBadgeText}>3</Text>
-            </View>
-            <Text style={styles.stepTitle}>Check-in Note</Text>
-            <Text style={styles.stepOptional}>Optional</Text>
-          </View>
-
-          <TextInput
-            style={styles.noteInput}
-            placeholder="How was the session? Personal best? New PR?"
-            placeholderTextColor={Colors.textMuted}
-            value={note}
-            onChangeText={setNote}
-            multiline
-            numberOfLines={4}
-            maxLength={280}
-            textAlignVertical="top"
-          />
-          <Text style={styles.charCount}>{note.length}/280</Text>
-        </View>
-
         {/* ── Submit ── */}
         <View style={styles.submitSection}>
-          {!canSubmit && (
-            <View style={styles.checklistCard}>
-              <Text style={styles.checklistTitle}>Before you submit:</Text>
-              <Text style={[styles.checklistItem, photoTaken && styles.checklistDone]}>
-                {photoTaken ? '✅' : '⬜'} Take a gym photo
-              </Text>
-              <Text style={[styles.checklistItem, selectedWorkout !== null && styles.checklistDone]}>
-                {selectedWorkout !== null ? '✅' : '⬜'} Select workout type
-              </Text>
-            </View>
-          )}
-
           <PrimaryButton
-            title={isLocked ? '🔓 Submit & Unlock Apps' : '✅ Log Workout'}
+            title={isLocked ? '🔓 Submit & Unlock Apps' : 'Submit'}
             onPress={handleSubmit}
             loading={isLoading}
-            disabled={!canSubmit}
+            disabled={!photoTaken}
           />
-
-          {isLocked && canSubmit && (
+          {isLocked && photoTaken && (
             <Text style={styles.submitHint}>
               Your selected apps will be unlocked immediately upon submission
             </Text>
@@ -286,7 +214,7 @@ const styles = StyleSheet.create({
   },
   warningText: {...Typography.bodySmall, color: Colors.primaryLight, lineHeight: 18},
 
-  // Step cards
+  // Step card
   stepCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
@@ -324,16 +252,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  stepOptional: {
-    ...Typography.caption,
-    color: Colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
 
   // Photo box
   photoBox: {
-    height: 160,
+    height: 200,
     borderRadius: Radius.md,
     borderWidth: 2,
     borderStyle: 'dashed',
@@ -348,7 +270,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.success,
     backgroundColor: 'rgba(34,224,154,0.06)',
   },
-  photoCameraIcon: {fontSize: 36, marginBottom: Spacing.xs},
+  photoCameraIcon: {fontSize: 40, marginBottom: Spacing.xs},
   photoBoxText: {...Typography.h4, color: Colors.textSecondary},
   photoBoxSubtext: {
     ...Typography.bodySmall,
@@ -362,11 +284,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md - 1,
     overflow: 'hidden',
   },
-  photoPreview: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
+  photoPreview: {width: '100%', height: '100%', resizeMode: 'cover'},
   photoOverlay: {
     position: 'absolute',
     bottom: 0,
@@ -376,69 +294,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
   },
-  photoOverlayText: {
-    ...Typography.bodySmall,
-    color: '#fff',
-    fontWeight: '600',
-  },
+  photoOverlayText: {...Typography.bodySmall, color: '#fff', fontWeight: '600'},
 
-  // Workout pills
-  pillGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.full,
-    borderWidth: 1.5,
-    borderColor: Colors.borderLight,
-    backgroundColor: Colors.surfaceElevated,
-    gap: 6,
-  },
-  pillSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: 'rgba(255,107,53,0.12)',
-  },
-  pillIcon: {fontSize: 16},
-  pillLabel: {...Typography.bodySmall, color: Colors.textSecondary, fontWeight: '500'},
-  pillLabelSelected: {color: Colors.primary, fontWeight: '700'},
-
-  // Note input
-  noteInput: {
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    padding: Spacing.md,
-    color: Colors.textPrimary,
-    fontSize: 15,
-    minHeight: 96,
-    lineHeight: 22,
-  },
-  charCount: {
-    ...Typography.caption,
-    color: Colors.textMuted,
-    textAlign: 'right',
-    marginTop: Spacing.xs,
-  },
-
-  // Submit section
+  // Submit
   submitSection: {gap: Spacing.md, marginTop: Spacing.sm},
-  checklistCard: {
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.md,
-    gap: Spacing.xs,
-  },
-  checklistTitle: {...Typography.label, color: Colors.textMuted, marginBottom: Spacing.xs, textTransform: 'uppercase', letterSpacing: 0.8},
-  checklistItem: {...Typography.body, color: Colors.textSecondary},
-  checklistDone: {color: Colors.success},
   submitHint: {
     ...Typography.bodySmall,
     color: Colors.textMuted,
@@ -446,7 +305,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // Success screen
+  // Unlocked confirmation screen
   successContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -454,7 +313,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
   successEmoji: {fontSize: 72, marginBottom: Spacing.lg},
-  successTitle: {...Typography.h1, color: Colors.textPrimary, textAlign: 'center', marginBottom: Spacing.sm},
+  successTitle: {
+    ...Typography.h1,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
   successDesc: {
     ...Typography.body,
     color: Colors.textSecondary,
@@ -462,7 +326,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: Spacing.xl,
   },
-  successDetails: {
+  nextLockCard: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
@@ -471,11 +335,18 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     marginBottom: Spacing.xl,
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
-  successDetailText: {...Typography.h4, color: Colors.primary},
-  successNote: {...Typography.body, color: Colors.textSecondary, fontStyle: 'italic', textAlign: 'center'},
-  successButton: {width: '100%'},
+  nextLockLabel: {
+    ...Typography.label,
+    color: Colors.textMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  nextLockTime: {...Typography.h3, color: Colors.primary},
+  logAnotherBtn: {paddingVertical: Spacing.sm},
+  logAnotherText: {...Typography.body, color: Colors.textMuted},
 });
 
 export default ProofSubmissionScreen;
+

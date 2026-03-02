@@ -91,35 +91,27 @@ const AppSelectionScreen: React.FC = () => {
 
             {/* ── Native Picker CTA ── */}
             <TouchableOpacity
-              style={[styles.pickerButton, isLocked && styles.pickerButtonDisabled]}
+              style={styles.pickerButton}
               onPress={selectApps}
-              disabled={isLoading || isLocked}
+              disabled={isLoading}
               activeOpacity={0.7}>
               {isLoading ? (
                 <ActivityIndicator color={Colors.primary} size="small" />
               ) : (
                 <>
-                  <Smartphone size={28} color={isLocked ? Colors.textMuted : Colors.primary} strokeWidth={1.6} />
+                  <Smartphone size={28} color={Colors.primary} strokeWidth={1.6} />
                   <View style={styles.pickerContent}>
                     <Text style={styles.pickerTitle}>
                       {hasApps ? 'Change App Selection' : 'Select Apps to Lock'}
                     </Text>
                     <Text style={styles.pickerSubtitle}>
-                      Apps lock immediately after selection
+                      {isLocked ? 'Add or change locked apps — lock stays active' : 'Apps lock immediately after selection'}
                     </Text>
                   </View>
-                  <ChevronRight size={20} color={isLocked ? Colors.textMuted : Colors.primary} strokeWidth={2} />
+                  <ChevronRight size={20} color={Colors.primary} strokeWidth={2} />
                 </>
               )}
             </TouchableOpacity>
-
-            {isLocked && (
-              <View style={styles.lockedNotice}>
-                <Text style={styles.lockedNoticeText}>
-                  🔒 Submit gym proof first, then you can update your app selection
-                </Text>
-              </View>
-            )}
 
             {/* ── Selected Apps ── */}
             {hasApps ? (

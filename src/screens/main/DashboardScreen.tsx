@@ -11,7 +11,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {CompositeNavigationProp, useFocusEffect} from '@react-navigation/native';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {Smartphone, Settings as SettingsIcon, Camera} from 'lucide-react-native';
+import {Smartphone, Settings as SettingsIcon} from 'lucide-react-native';
 import {MainTabParamList, MainStackParamList} from '../../navigation/types';
 import {Colors, Spacing, Radius, Typography} from '../../theme';
 import {useAuth} from '../../context/AuthContext';
@@ -95,17 +95,12 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
           </View>
         </View>
 
-        {/* ── Status Hero Card — only show when locked or unlocked ── */}
-        {(status === 'locked' || status === 'unlocked') && (
+        {/* ── Status Hero Card — only show when unlocked ── */}
+        {status === 'unlocked' && (
         <View style={[styles.heroCard, {backgroundColor: cfg.bg, borderColor: cfg.border}]}>
           <Text style={styles.heroEmoji}>{cfg.emoji}</Text>
           <Text style={[styles.heroStatus, {color: cfg.color}]}>{cfg.label}</Text>
           <Text style={styles.heroDescription}>{cfg.description}</Text>
-          {status === 'locked' && elapsedSeconds > 0 && (
-            <View style={styles.timerPill}>
-              <Text style={styles.timerText}>⏱ Locked for {formatElapsed(elapsedSeconds)}</Text>
-            </View>
-          )}
         </View>
         )}
 
@@ -197,29 +192,7 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
           <Text style={styles.navChevron}>›</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.navCard, styles.navCardHighlight]}
-          onPress={() => navigation.navigate('Proof')}
-          disabled={status !== 'locked'}>
-          <View style={[styles.navIcon, {backgroundColor: '#2E1A0A'}]}>
-            <Camera size={24} color={status === 'locked' ? Colors.primary : Colors.textMuted} strokeWidth={1.8} />
-          </View>
-          <View style={styles.navContent}>
-            <Text style={[styles.navTitle, status === 'locked' && {color: Colors.primary}]}>
-              Submit Proof
-            </Text>
-            <Text style={styles.navSubtitle}>
-              {status === 'locked'
-                ? 'Submit your gym photo to unlock apps'
-                : 'Only available when apps are locked'}
-            </Text>
-          </View>
-          {status === 'locked' && (
-            <View style={styles.urgentBadge}>
-              <Text style={styles.urgentText}>!</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+
 
       </ScrollView>
     </SafeAreaView>

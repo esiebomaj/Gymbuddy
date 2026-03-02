@@ -166,7 +166,17 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
       setScreenTimeAuthorized(true);
       setStatus('idle');
     } catch (e: any) {
-      Alert.alert('Authorization Error', e.message);
+      if (e?.code === 'ENTITLEMENT_MISSING') {
+        Alert.alert(
+          'Developer Account Required',
+          'App locking uses Apple Screen Time and requires a paid Apple Developer Program account ($99/year).\n\nVisit developer.apple.com to enroll.',
+          [{text: 'OK'}],
+        );
+      } else if (e?.code === 'UNSUPPORTED') {
+        Alert.alert('iOS 16 Required', 'App locking requires iOS 16 or later.');
+      } else {
+        Alert.alert('Authorization Failed', e.message ?? 'Something went wrong.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -176,18 +186,22 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
     setIsLoading(true);
     try {
       const count = await ScreenTimeManager.showAppPicker();
-      setSelectedAppCount(count);
       if (count > 0) {
+        setSelectedAppCount(count);
         await ScreenTimeManager.lockApps();
-        setStatus('locked');
-        setLockedAt(new Date());
+        if (status !== 'locked') {
+          setStatus('locked');
+          setLockedAt(new Date());
+        }
+        // If already locked, keep the existing lock timestamp — just update the selection
       }
+      // If count === 0 and already locked, ignore the result to prevent bypassing the lock
     } catch (e: any) {
       Alert.alert('App Picker Error', e.message);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [status]);
 
   const lockApps = useCallback(async () => {
     if (selectedAppCount === 0) {

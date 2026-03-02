@@ -21,6 +21,10 @@ class ScreenTimeManager: NSObject {
   // Tokens are opaque — they don't expose bundle IDs, only the system can resolve them.
   static var selectedApps: Set<ApplicationToken> = []
 
+  // Stores the full FamilyActivitySelection so we can pre-populate the picker
+  // on subsequent opens, letting the user add more apps to an existing lock.
+  static var currentSelection = FamilyActivitySelection()
+
   // MARK: - 1. Authorization
   // Requests the user (or guardian, for child accounts) to authorize this app
   // for Family Controls. This is a one-time prompt per device/account.
@@ -35,11 +39,18 @@ class ScreenTimeManager: NSObject {
           try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
           resolve("authorized")
         } catch {
-          reject("AUTH_ERROR", "Authorization failed: \(error.localizedDescription)", error)
+          // Error code 4 = restricted (missing entitlement or personal team)
+          // Error code 5 = denied by user
+          let nsError = error as NSError
+          if nsError.code == 4 || nsError.code == 5 {
+            reject("ENTITLEMENT_MISSING", "Screen Time requires an Apple Developer Program membership. Please sign up at developer.apple.com to enable app locking.", error)
+          } else {
+            reject("AUTH_ERROR", "Authorization failed: \(error.localizedDescription)", error)
+          }
         }
       }
     } else {
-      reject("UNSUPPORTED", "iOS 16+ required", nil)
+      reject("UNSUPPORTED", "Screen Time app locking requires iOS 16 or later.", nil)
     }
   }
 
@@ -61,7 +72,7 @@ class ScreenTimeManager: NSObject {
         return
       }
 
-      let pickerView = ActivityPickerView(onDismiss: { count in
+      let pickerView = ActivityPickerView(previousSelection: ScreenTimeManager.currentSelection, onDismiss: { count in
         resolve(count)
       })
       let hostingController = UIHostingController(rootView: pickerView)

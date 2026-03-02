@@ -15,8 +15,20 @@ import FamilyControls
 // ---------------------------------------------------------------------------
 
 struct ActivityPickerView: View {
-  @State private var selection = FamilyActivitySelection()
+  @State private var selection: FamilyActivitySelection
+  // The selection that was active when the picker was opened.
+  // On Done we union the new selection with this so that previously
+  // locked apps are never accidentally removed.
+  private let previousSelection: FamilyActivitySelection
   var onDismiss: (Int) -> Void
+
+  init(previousSelection: FamilyActivitySelection, onDismiss: @escaping (Int) -> Void) {
+    self.previousSelection = previousSelection
+    self.onDismiss = onDismiss
+    // Pre-populate the picker — user sees their existing locked apps already
+    // checked and can simply add more on top.
+    _selection = State(initialValue: previousSelection)
+  }
 
   var body: some View {
     NavigationView {
@@ -26,10 +38,18 @@ struct ActivityPickerView: View {
         .toolbar {
           ToolbarItem(placement: .confirmationAction) {
             Button("Done") {
-              // Store the selected application tokens globally so
-              // ScreenTimeManager.lockApps() can read them.
-              ScreenTimeManager.selectedApps = selection.applicationTokens
-              onDismiss(selection.applicationTokens.count)
+              // Union new picks with previous so old locks are always preserved.
+              let combinedTokens = selection.applicationTokens
+                .union(previousSelection.applicationTokens)
+              ScreenTimeManager.selectedApps = combinedTokens
+
+              // Persist the merged selection so the next picker open is
+              // also pre-populated correctly.
+              var saved = FamilyActivitySelection()
+              saved.applicationTokens = combinedTokens
+              ScreenTimeManager.currentSelection = saved
+
+              onDismiss(combinedTokens.count)
 
               // Dismiss the UIHostingController that presents this view.
               if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,

@@ -46,6 +46,55 @@
 			"command": "npx react-native start --reset-cache",
 			"isBackground": true,
 			"problemMatcher": []
+		},
+		{
+			"label": "Metro Bundler",
+			"type": "shell",
+			"command": "npx react-native start --reset-cache",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run iOS Simulator",
+			"type": "shell",
+			"command": "npx react-native run-ios --udid 3461974B-F09D-4EBA-9C49-BF36F09977A4 --no-packager",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run iOS Simulator",
+			"type": "shell",
+			"command": "npx react-native run-ios --udid 3461974B-F09D-4EBA-9C49-BF36F09977A4 --no-packager",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run iOS Simulator",
+			"type": "shell",
+			"command": "npx react-native run-ios --udid 3461974B-F09D-4EBA-9C49-BF36F09977A4 --no-packager",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run iOS Simulator",
+			"type": "shell",
+			"command": "npx react-native run-ios --udid 3461974B-F09D-4EBA-9C49-BF36F09977A4 --no-packager",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run iOS Simulator",
+			"type": "shell",
+			"command": "npx react-native run-ios --udid 3461974B-F09D-4EBA-9C49-BF36F09977A4 --no-packager",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Metro Bundler",
+			"type": "shell",
+			"command": "npx react-native start --reset-cache",
+			"isBackground": true,
+			"problemMatcher": []
 		}
 	]
 }

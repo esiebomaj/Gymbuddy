@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,40 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Target, Flame, Dumbbell, Bell, Lock, Info, LogOut} from 'lucide-react-native';
+import {Target, Flame, Dumbbell, LogOut, CalendarDays, Clock, X, Check} from 'lucide-react-native';
 import {Colors, Spacing, Radius, Typography} from '../../theme';
 import {useAuth} from '../../context/AuthContext';
 import {useLock} from '../../context/LockContext';
+
+// ── Constants (mirrors OnboardingScreen) ──────────────────────────────────────
+
+const DAYS = [
+  {label: 'Mo', value: 1},
+  {label: 'Tu', value: 2},
+  {label: 'We', value: 3},
+  {label: 'Th', value: 4},
+  {label: 'Fr', value: 5},
+  {label: 'Sa', value: 6},
+  {label: 'Su', value: 0},
+];
+
+const HOURS = Array.from({length: 24}, (_, i) => {
+  const h = i; // 12AM – 11PM (full 24h)
+  const suffix = h < 12 ? 'AM' : 'PM';
+  const display = h === 0 ? 12 : h === 12 ? 12 : h > 12 ? h - 12 : h;
+  return {label: `${display}${suffix}`, value: `${String(h).padStart(2, '0')}:00`};
+});
+
+const formatTime = (val: string) => {
+  const h = parseInt(val.split(':')[0], 10);
+  const suffix = h < 12 ? 'AM' : 'PM';
+  const disp = h === 12 ? 12 : h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${disp}:00 ${suffix}`;
+};
 
 // ── Row components ────────────────────────────────────────────────────────────
 
@@ -55,8 +83,48 @@ const Separator = () => <View style={styles.separator} />;
 const SettingsScreen: React.FC = () => {
   const {user, signOut} = useAuth();
   const {settings, stats, updateSettings} = useLock();
-  const {weekly_goal} = settings;
   const {current_streak, longest_streak, total_visits} = stats;
+
+  // ── Schedule modal state ──────────────────────────────────────────────────
+  const [scheduleVisible, setScheduleVisible] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<number[]>(settings.gym_days ?? [1,2,3,4,5]);
+  const [startTime, setStartTime] = useState(settings.lock_start_time ?? '06:00');
+  const [endTime, setEndTime] = useState(settings.lock_end_time ?? '22:00');
+  const [saving, setSaving] = useState(false);
+
+  const openSchedule = () => {
+    // Seed with current saved settings each time the modal opens
+    setSelectedDays(settings.gym_days ?? [1,2,3,4,5]);
+    setStartTime(settings.lock_start_time ?? '06:00');
+    setEndTime(settings.lock_end_time ?? '22:00');
+    setScheduleVisible(true);
+  };
+
+  const toggleDay = (val: number) =>
+    setSelectedDays(prev =>
+      prev.includes(val) ? prev.filter(d => d !== val) : [...prev, val],
+    );
+
+  const saveSchedule = async () => {
+    if (selectedDays.length === 0) {
+      Alert.alert('No days selected', 'Pick at least one gym day.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateSettings({
+        weekly_goal: selectedDays.length,
+        gym_days: selectedDays,
+        lock_start_time: startTime,
+        lock_end_time: endTime,
+      });
+      setScheduleVisible(false);
+    } catch (e: any) {
+      Alert.alert('Error', e.message ?? 'Could not save schedule.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -68,6 +136,14 @@ const SettingsScreen: React.FC = () => {
       ],
     );
   };
+
+  // Friendly summary for the settings row
+  const scheduleSummary = (() => {
+    const days = settings.gym_days ?? [];
+    const dayLabels = DAYS.filter(d => days.includes(d.value)).map(d => d.label);
+    const dayStr = dayLabels.length > 0 ? dayLabels.join(', ') : 'No days';
+    return `${dayStr} · ${formatTime(settings.lock_start_time ?? '06:00')}–${formatTime(settings.lock_end_time ?? '22:00')}`;
+  })();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -98,29 +174,9 @@ const SettingsScreen: React.FC = () => {
         <SectionHeader title="GYM SCHEDULE" />
         <View style={styles.section}>
           <SettingRow
-            icon={<Target size={20} color={Colors.primary} strokeWidth={1.8} />}
-            label="Weekly goal"
-            rightElement={
-              <View style={styles.stepper}>
-                <TouchableOpacity
-                  style={[styles.stepBtn, weekly_goal <= 1 && styles.stepBtnDisabled]}
-                  onPress={() => updateSettings({weekly_goal: weekly_goal - 1})}
-                  disabled={weekly_goal <= 1}
-                  activeOpacity={0.7}>
-                  <Text style={styles.stepBtnText}>−</Text>
-                </TouchableOpacity>
-                <Text style={styles.stepValue}>
-                  {weekly_goal} day{weekly_goal !== 1 ? 's' : ''}
-                </Text>
-                <TouchableOpacity
-                  style={[styles.stepBtn, weekly_goal >= 7 && styles.stepBtnDisabled]}
-                  onPress={() => updateSettings({weekly_goal: weekly_goal + 1})}
-                  disabled={weekly_goal >= 7}
-                  activeOpacity={0.7}>
-                  <Text style={styles.stepBtnText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            }
+            icon={<CalendarDays size={20} color={Colors.primary} strokeWidth={1.8} />}
+            label="Schedule"
+            onPress={openSchedule}
           />
         </View>
 
@@ -146,28 +202,6 @@ const SettingsScreen: React.FC = () => {
           />
         </View>
 
-        {/* ── App ── */}
-        <SectionHeader title="APP" />
-        <View style={styles.section}>
-          <SettingRow
-            icon={<Bell size={20} color={Colors.textSecondary} strokeWidth={1.8} />}
-            label="Notifications"
-            value="Coming soon"
-          />
-          <Separator />
-          <SettingRow
-            icon={<Lock size={20} color={Colors.textSecondary} strokeWidth={1.8} />}
-            label="Screen Time permission"
-            value="Granted"
-          />
-          <Separator />
-          <SettingRow
-            icon={<Info size={20} color={Colors.textSecondary} strokeWidth={1.8} />}
-            label="Version"
-            value="1.0.0 (MVP)"
-          />
-        </View>
-
         {/* ── Account ── */}
         <SectionHeader title="ACCOUNT" />
         <View style={styles.section}>
@@ -182,6 +216,134 @@ const SettingsScreen: React.FC = () => {
         <Text style={styles.footer}>GymBuddy · Built to keep you honest 💪</Text>
 
       </ScrollView>
+
+      {/* ── Gym Schedule Modal ─────────────────────────────────────────────── */}
+      <Modal
+        visible={scheduleVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setScheduleVisible(false)}>
+        <View style={styles.modalContainer}>
+          {/* Header */}
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setScheduleVisible(false)}
+              activeOpacity={0.7}>
+              <X size={20} color={Colors.textPrimary} strokeWidth={2} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Gym Schedule</Text>
+            <TouchableOpacity
+              style={[styles.modalSaveBtn, saving && {opacity: 0.5}]}
+              onPress={saveSchedule}
+              disabled={saving}
+              activeOpacity={0.8}>
+              {saving
+                ? <ActivityIndicator size="small" color={Colors.white} />
+                : <Text style={styles.modalSaveBtnText}>Save</Text>}
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={styles.modalScroll}
+            showsVerticalScrollIndicator={false}>
+
+            {/* ── Days ── */}
+            <View style={styles.modalSection}>
+              <View style={styles.modalSectionHeader}>
+                <CalendarDays size={18} color={Colors.primary} strokeWidth={1.8} />
+                <Text style={styles.modalSectionTitle}>Training days</Text>
+              </View>
+              <View style={styles.daysRow}>
+                {DAYS.map(d => {
+                  const active = selectedDays.includes(d.value);
+                  return (
+                    <TouchableOpacity
+                      key={d.value}
+                      style={[styles.dayPill, active && styles.dayPillActive]}
+                      onPress={() => toggleDay(d.value)}
+                      activeOpacity={0.75}>
+                      {active && <Check size={11} color={Colors.white} strokeWidth={3} style={{marginBottom: 1}} />}
+                      <Text style={[styles.dayPillText, active && styles.dayPillTextActive]}>
+                        {d.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={styles.daysHint}>
+                {selectedDays.length === 0
+                  ? 'Select at least one day'
+                  : `${selectedDays.length} day${selectedDays.length !== 1 ? 's' : ''} · ${selectedDays.length}x/week goal`}
+              </Text>
+            </View>
+
+            {/* ── Lock start time ── */}
+            <View style={styles.modalSection}>
+              <View style={styles.modalSectionHeader}>
+                <Clock size={18} color={Colors.primary} strokeWidth={1.8} />
+                <Text style={styles.modalSectionTitle}>Locks at</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.timeScroll}>
+                {HOURS.map(h => {
+                  const active = startTime === h.value;
+                  return (
+                    <TouchableOpacity
+                      key={h.value}
+                      style={[styles.timePill, active && styles.timePillActive]}
+                      onPress={() => setStartTime(h.value)}
+                      activeOpacity={0.75}>
+                      <Text style={[styles.timePillText, active && styles.timePillTextActive]}>
+                        {h.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* ── Lock end time ── */}
+            <View style={styles.modalSection}>
+              <View style={styles.modalSectionHeader}>
+                <Clock size={18} color={Colors.textSecondary} strokeWidth={1.8} />
+                <Text style={styles.modalSectionTitle}>Unlocks at</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.timeScroll}>
+                {HOURS.map(h => {
+                  const active = endTime === h.value;
+                  return (
+                    <TouchableOpacity
+                      key={h.value}
+                      style={[styles.timePill, active && styles.timePillActive]}
+                      onPress={() => setEndTime(h.value)}
+                      activeOpacity={0.75}>
+                      <Text style={[styles.timePillText, active && styles.timePillTextActive]}>
+                        {h.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* Preview */}
+            <View style={styles.timePreview}>
+              <Text style={styles.timePreviewText}>
+                {formatTime(startTime)} → {formatTime(endTime)}
+              </Text>
+              <Text style={styles.timePreviewSub}>daily lock window</Text>
+            </View>
+
+          </ScrollView>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -253,24 +415,8 @@ const styles = StyleSheet.create({
   rowIconWrap: {width: 28, alignItems: 'center', justifyContent: 'center'},
   rowLabel: {...Typography.body, color: Colors.textPrimary},
   destructiveLabel: {color: Colors.error},
-  rowValue: {...Typography.body, color: Colors.textMuted},
+  rowValue: {...Typography.bodySmall, color: Colors.textMuted, flexShrink: 1, textAlign: 'right', maxWidth: 180},
   rowChevron: {fontSize: 22, color: Colors.textMuted},
-
-  // Stepper
-  stepper: {flexDirection: 'row', alignItems: 'center', gap: Spacing.sm},
-  stepBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepBtnDisabled: {opacity: 0.3},
-  stepBtnText: {fontSize: 18, fontWeight: '700', color: Colors.textPrimary, lineHeight: 22},
-  stepValue: {...Typography.body, color: Colors.textPrimary, minWidth: 56, textAlign: 'center'},
 
   // Footer
   footer: {
@@ -279,6 +425,100 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: Spacing.lg,
   },
+
+  // ── Modal ──────────────────────────────────────────────────────────────────
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalTitle: {...Typography.h4, color: Colors.textPrimary},
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalSaveBtn: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: Radius.md,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  modalSaveBtnText: {color: Colors.white, fontWeight: '700', fontSize: 14},
+  modalScroll: {paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl, paddingTop: Spacing.lg},
+  modalSection: {marginBottom: Spacing.xl},
+  modalSectionHeader: {flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.md},
+  modalSectionTitle: {...Typography.h4, color: Colors.textPrimary},
+
+  // Days
+  daysRow: {flexDirection: 'row', gap: 8, flexWrap: 'nowrap'},
+  dayPill: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 2,
+  },
+  dayPillActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  dayPillText: {...Typography.caption, color: Colors.textMuted, fontWeight: '600'},
+  dayPillTextActive: {color: Colors.white},
+  daysHint: {
+    ...Typography.bodySmall,
+    color: Colors.textMuted,
+    marginTop: Spacing.sm,
+  },
+
+  // Time picker
+  timeScroll: {paddingVertical: 4, gap: 8},
+  timePill: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  timePillActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  timePillText: {...Typography.bodySmall, color: Colors.textMuted, fontWeight: '600'},
+  timePillTextActive: {color: Colors.white},
+
+  // Preview
+  timePreview: {
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  timePreviewText: {...Typography.h3, color: Colors.primary},
+  timePreviewSub: {...Typography.caption, color: Colors.textMuted, marginTop: 4},
 });
 
 export default SettingsScreen;
