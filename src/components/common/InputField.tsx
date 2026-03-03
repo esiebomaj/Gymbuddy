@@ -7,7 +7,8 @@ import {
   StyleSheet,
   TextInputProps,
 } from 'react-native';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 
 interface InputFieldProps extends TextInputProps {
   label: string;
@@ -23,6 +24,8 @@ const InputField: React.FC<InputFieldProps> = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isSecure, setIsSecure] = useState(isPassword);
+  const {colors} = useTheme();
+  const styles = makeStyles(colors);
 
   return (
     <View style={styles.container}>
@@ -35,7 +38,7 @@ const InputField: React.FC<InputFieldProps> = ({
         ]}>
         <TextInput
           style={styles.input}
-          placeholderTextColor={Colors.textMuted}
+          placeholderTextColor={colors.textMuted}
           secureTextEntry={isSecure}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -55,13 +58,13 @@ const InputField: React.FC<InputFieldProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     marginBottom: Spacing.md,
   },
   label: {
     ...Typography.label,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: Spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -69,23 +72,23 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     paddingHorizontal: Spacing.md,
     height: 54,
   },
   inputFocused: {
-    borderColor: Colors.borderFocused,
-    backgroundColor: Colors.surfaceElevated,
+    borderColor: colors.borderFocused,
+    backgroundColor: colors.surfaceElevated,
   },
   inputError: {
     borderColor: Colors.error,
   },
   input: {
     flex: 1,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     fontSize: 15,
     paddingVertical: 0,
   },

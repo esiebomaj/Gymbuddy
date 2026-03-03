@@ -4,6 +4,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {AuthProvider} from './src/context/AuthContext';
 import {LockProvider} from './src/context/LockContext';
+import {ThemeProvider} from './src/context/ThemeContext';
 import RootNavigator from './src/navigation/RootNavigator';
 
 class ErrorBoundary extends React.Component<
@@ -40,13 +41,15 @@ function App(): React.JSX.Element {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <AuthProvider>
-          <LockProvider>
-            <NavigationContainer>
-              <RootNavigator />
-            </NavigationContainer>
-          </LockProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <LockProvider>
+              <NavigationContainer>
+                <RootNavigator />
+              </NavigationContainer>
+            </LockProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
   );

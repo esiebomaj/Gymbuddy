@@ -9,10 +9,12 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Target, Flame, Dumbbell, LogOut, CalendarDays, Clock, X, Check} from 'lucide-react-native';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Target, Flame, Dumbbell, LogOut, CalendarDays, Clock, X, Check, Moon} from 'lucide-react-native';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import {useAuth} from '../../context/AuthContext';
 import {useLock} from '../../context/LockContext';
 
@@ -51,7 +53,10 @@ const SettingRow: React.FC<{
   onPress?: () => void;
   destructive?: boolean;
   rightElement?: React.ReactNode;
-}> = ({icon, label, value, onPress, destructive, rightElement}) => (
+}> = ({icon, label, value, onPress, destructive, rightElement}) => {
+  const {colors} = useTheme();
+  const styles = makeStyles(colors);
+  return (
   <TouchableOpacity
     style={styles.row}
     onPress={onPress}
@@ -70,13 +75,20 @@ const SettingRow: React.FC<{
       )}
     </View>
   </TouchableOpacity>
-);
+  );
+};
 
-const SectionHeader: React.FC<{title: string}> = ({title}) => (
-  <Text style={styles.sectionHeader}>{title}</Text>
-);
+const SectionHeader: React.FC<{title: string}> = ({title}) => {
+  const {colors} = useTheme();
+  const styles = makeStyles(colors);
+  return <Text style={styles.sectionHeader}>{title}</Text>;
+};
 
-const Separator = () => <View style={styles.separator} />;
+const Separator = () => {
+  const {colors} = useTheme();
+  const styles = makeStyles(colors);
+  return <View style={styles.separator} />;
+};
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -84,6 +96,8 @@ const SettingsScreen: React.FC = () => {
   const {user, signOut} = useAuth();
   const {settings, stats, updateSettings} = useLock();
   const {current_streak, longest_streak, total_visits} = stats;
+  const {colors, isDark, barStyle, toggleTheme} = useTheme();
+  const styles = makeStyles(colors);
 
   // ── Schedule modal state ──────────────────────────────────────────────────
   const [scheduleVisible, setScheduleVisible] = useState(false);
@@ -147,7 +161,7 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
@@ -199,6 +213,24 @@ const SettingsScreen: React.FC = () => {
             icon={<Dumbbell size={20} color={Colors.textSecondary} strokeWidth={1.8} />}
             label="Total gym visits"
             value={`${total_visits}`}
+          />
+        </View>
+
+        {/* ── Appearance ── */}
+        <SectionHeader title="APPEARANCE" />
+        <View style={styles.section}>
+          <SettingRow
+            icon={<Moon size={20} color={Colors.primary} strokeWidth={1.8} />}
+            label="Dark Mode"
+            rightElement={
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{false: colors.border, true: Colors.primary + '88'}}
+                thumbColor={isDark ? Colors.primary : colors.textMuted}
+                ios_backgroundColor={colors.border}
+              />
+            }
           />
         </View>
 
@@ -350,20 +382,20 @@ const SettingsScreen: React.FC = () => {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: Colors.background},
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.background},
   scroll: {paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl},
   header: {paddingTop: Spacing.lg, paddingBottom: Spacing.lg},
-  title: {...Typography.h2, color: Colors.textPrimary},
+  title: {...Typography.h2, color: colors.textPrimary},
 
   // Profile card
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.md,
     marginBottom: Spacing.xl,
     gap: Spacing.md,
@@ -378,13 +410,13 @@ const styles = StyleSheet.create({
   },
   avatarText: {fontSize: 22, fontWeight: '700', color: Colors.white},
   profileInfo: {flex: 1},
-  profileName: {...Typography.h4, color: Colors.textPrimary, marginBottom: 3},
-  profileEmail: {...Typography.bodySmall, color: Colors.textMuted},
+  profileName: {...Typography.h4, color: colors.textPrimary, marginBottom: 3},
+  profileEmail: {...Typography.bodySmall, color: colors.textMuted},
 
   // Sections
   sectionHeader: {
     ...Typography.label,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     marginBottom: Spacing.xs,
@@ -392,14 +424,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xs,
   },
   section: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     marginBottom: Spacing.md,
     overflow: 'hidden',
   },
-  separator: {height: 1, backgroundColor: Colors.border, marginHorizontal: Spacing.md},
+  separator: {height: 1, backgroundColor: colors.border, marginHorizontal: Spacing.md},
 
   // Row
   row: {
@@ -413,15 +445,15 @@ const styles = StyleSheet.create({
   rowLeft: {flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1},
   rowRight: {flexDirection: 'row', alignItems: 'center', gap: Spacing.sm},
   rowIconWrap: {width: 28, alignItems: 'center', justifyContent: 'center'},
-  rowLabel: {...Typography.body, color: Colors.textPrimary},
+  rowLabel: {...Typography.body, color: colors.textPrimary},
   destructiveLabel: {color: Colors.error},
-  rowValue: {...Typography.bodySmall, color: Colors.textMuted, flexShrink: 1, textAlign: 'right', maxWidth: 180},
-  rowChevron: {fontSize: 22, color: Colors.textMuted},
+  rowValue: {...Typography.bodySmall, color: colors.textMuted, flexShrink: 1, textAlign: 'right', maxWidth: 180},
+  rowChevron: {fontSize: 22, color: colors.textMuted},
 
   // Footer
   footer: {
     ...Typography.caption,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     marginTop: Spacing.lg,
   },
@@ -429,7 +461,7 @@ const styles = StyleSheet.create({
   // ── Modal ──────────────────────────────────────────────────────────────────
   modalContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -438,16 +470,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: colors.border,
   },
-  modalTitle: {...Typography.h4, color: Colors.textPrimary},
+  modalTitle: {...Typography.h4, color: colors.textPrimary},
   modalCloseBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -463,7 +495,7 @@ const styles = StyleSheet.create({
   modalScroll: {paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl, paddingTop: Spacing.lg},
   modalSection: {marginBottom: Spacing.xl},
   modalSectionHeader: {flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.md},
-  modalSectionTitle: {...Typography.h4, color: Colors.textPrimary},
+  modalSectionTitle: {...Typography.h4, color: colors.textPrimary},
 
   // Days
   daysRow: {flexDirection: 'row', gap: 8, flexWrap: 'nowrap'},
@@ -472,8 +504,8 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: Radius.md,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 2,
@@ -482,11 +514,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
-  dayPillText: {...Typography.caption, color: Colors.textMuted, fontWeight: '600'},
+  dayPillText: {...Typography.caption, color: colors.textMuted, fontWeight: '600'},
   dayPillTextActive: {color: Colors.white},
   daysHint: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: Spacing.sm,
   },
 
@@ -497,28 +529,28 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: Radius.md,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   timePillActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
-  timePillText: {...Typography.bodySmall, color: Colors.textMuted, fontWeight: '600'},
+  timePillText: {...Typography.bodySmall, color: colors.textMuted, fontWeight: '600'},
   timePillTextActive: {color: Colors.white},
 
   // Preview
   timePreview: {
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.md,
     marginTop: Spacing.sm,
   },
   timePreviewText: {...Typography.h3, color: Colors.primary},
-  timePreviewSub: {...Typography.caption, color: Colors.textMuted, marginTop: 4},
+  timePreviewSub: {...Typography.caption, color: colors.textMuted, marginTop: 4},
 });
 
 export default SettingsScreen;

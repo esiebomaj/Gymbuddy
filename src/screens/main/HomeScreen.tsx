@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import {useAuth} from '../../context/AuthContext';
 
 const {ScreenTimeManager} = NativeModules;
@@ -18,6 +19,8 @@ const HomeScreen: React.FC = () => {
   const [status, setStatus] = useState('Not authorized');
   const [appCount, setAppCount] = useState(0);
   const {user, signOut} = useAuth();
+  const {colors} = useTheme();
+  const styles = makeStyles(colors);
 
   const requestAuth = async () => {
     try {
@@ -114,10 +117,10 @@ const HomeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     paddingHorizontal: Spacing.lg,
   },
   header: {
@@ -129,13 +132,13 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
   userName: {
     ...Typography.h3,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginTop: 2,
   },
   signOutButton: {
@@ -143,31 +146,31 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   signOutText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '500',
   },
   statusCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.lg,
     marginBottom: Spacing.xl,
   },
   statusLabel: {
     ...Typography.label,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: Spacing.xs,
   },
   statusValue: {
     ...Typography.h4,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
   },
   appCount: {
     ...Typography.bodySmall,
@@ -180,10 +183,10 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.md,
     gap: Spacing.md,
   },
@@ -195,7 +198,7 @@ const styles = StyleSheet.create({
   actionIcon: {fontSize: 22},
   actionLabel: {
     ...Typography.h4,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
   },
   primaryActionLabel: {
     color: Colors.white,

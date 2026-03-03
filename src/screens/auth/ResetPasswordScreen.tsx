@@ -14,7 +14,8 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RouteProp} from '@react-navigation/native';
 import {AuthStackParamList} from '../../navigation/types';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import InputField from '../../components/common/InputField';
 import PrimaryButton from '../../components/common/PrimaryButton';
 import {supabase} from '../../lib/supabase';
@@ -38,6 +39,8 @@ const ResetPasswordScreen: React.FC<Props> = ({navigation, route}) => {
   }>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const {colors, barStyle} = useTheme();
+  const styles = makeStyles(colors);
 
   const {email} = route.params;
 
@@ -104,7 +107,7 @@ const ResetPasswordScreen: React.FC<Props> = ({navigation, route}) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}>
@@ -187,8 +190,8 @@ const ResetPasswordScreen: React.FC<Props> = ({navigation, route}) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: Colors.background},
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.background},
   flex: {flex: 1},
   scrollContent: {
     flexGrow: 1,
@@ -205,9 +208,9 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: Radius.xl,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Spacing.xl,
@@ -216,32 +219,32 @@ const styles = StyleSheet.create({
   iconEmoji: {fontSize: 40},
   title: {
     ...Typography.h2,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   subtitle: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 22,
     marginBottom: Spacing.xl,
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.lg,
   },
   requirementsBox: {
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.md,
     marginBottom: Spacing.lg,
   },
   requirementsTitle: {
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.8,
@@ -254,10 +257,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     gap: Spacing.sm,
   },
-  reqIcon: {fontSize: 13, color: Colors.textMuted, width: 16},
+  reqIcon: {fontSize: 13, color: colors.textMuted, width: 16},
   reqIconMet: {color: Colors.success},
-  reqText: {fontSize: 13, color: Colors.textMuted},
-  reqTextMet: {color: Colors.textSecondary},
+  reqText: {fontSize: 13, color: colors.textMuted},
+  reqTextMet: {color: colors.textSecondary},
   // Success screen
   successScreen: {
     flex: 1,

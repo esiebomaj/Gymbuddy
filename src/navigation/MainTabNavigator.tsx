@@ -3,7 +3,8 @@ import {View, Text, Platform} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {Home, Camera, Settings} from 'lucide-react-native';
 import type {MainTabParamList} from './types';
-import {Colors} from '../theme';
+import {Colors, type AppColors} from '../theme';
+import {useTheme} from '../context/ThemeContext';
 
 import DashboardScreen from '../screens/main/DashboardScreen';
 import ProofSubmissionScreen from '../screens/main/ProofSubmissionScreen';
@@ -21,7 +22,9 @@ interface TabIconProps {
   badge?: boolean;
 }
 
-const TabIcon: React.FC<TabIconProps> = ({icon, label, focused, badge}) => (
+const TabIcon: React.FC<TabIconProps> = ({icon, label, focused, badge}) => {
+  const {colors} = useTheme();
+  return (
   <View style={{alignItems: 'center', justifyContent: 'center', paddingTop: 4, minWidth: 56}}>
     <View style={{position: 'relative'}}>
       {icon}
@@ -36,7 +39,7 @@ const TabIcon: React.FC<TabIconProps> = ({icon, label, focused, badge}) => (
             borderRadius: 5,
             backgroundColor: Colors.error,
             borderWidth: 1.5,
-            borderColor: Colors.background,
+            borderColor: colors.background,
           }}
         />
       )}
@@ -44,7 +47,7 @@ const TabIcon: React.FC<TabIconProps> = ({icon, label, focused, badge}) => (
     <Text
       style={{
         fontSize: 10,
-        color: focused ? Colors.primary : Colors.textMuted,
+        color: focused ? Colors.primary : colors.textMuted,
         marginTop: 3,
         fontWeight: focused ? '700' : '400',
         textAlign: 'center',
@@ -52,12 +55,14 @@ const TabIcon: React.FC<TabIconProps> = ({icon, label, focused, badge}) => (
       {label}
     </Text>
   </View>
-);
+  );
+};
 
 // ── Navigator ─────────────────────────────────────────────────────────────────
 
 const MainTabNavigator: React.FC = () => {
   const {status} = useLock();
+  const {colors} = useTheme();
   const isLocked = status === 'locked';
 
   return (
@@ -66,8 +71,8 @@ const MainTabNavigator: React.FC = () => {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: Colors.surface,
-          borderTopColor: Colors.border,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           height: Platform.OS === 'ios' ? 80 : 64,
           paddingBottom: Platform.OS === 'ios' ? 20 : 8,
@@ -83,7 +88,7 @@ const MainTabNavigator: React.FC = () => {
         options={{
           tabBarIcon: ({focused}) => (
             <TabIcon
-              icon={<Home size={23} color={focused ? Colors.primary : Colors.textMuted} strokeWidth={focused ? 2.2 : 1.8} />}
+              icon={<Home size={23} color={focused ? Colors.primary : colors.textMuted} strokeWidth={focused ? 2.2 : 1.8} />}
               label="Home"
               focused={focused}
             />
@@ -97,7 +102,7 @@ const MainTabNavigator: React.FC = () => {
         options={{
           tabBarIcon: ({focused}) => (
             <TabIcon
-              icon={<Camera size={23} color={focused ? Colors.primary : Colors.textMuted} strokeWidth={focused ? 2.2 : 1.8} />}
+              icon={<Camera size={23} color={focused ? Colors.primary : colors.textMuted} strokeWidth={focused ? 2.2 : 1.8} />}
               label="Proof"
               focused={focused}
               badge={isLocked}
@@ -112,7 +117,7 @@ const MainTabNavigator: React.FC = () => {
         options={{
           tabBarIcon: ({focused}) => (
             <TabIcon
-              icon={<Settings size={23} color={focused ? Colors.primary : Colors.textMuted} strokeWidth={focused ? 2.2 : 1.8} />}
+              icon={<Settings size={23} color={focused ? Colors.primary : colors.textMuted} strokeWidth={focused ? 2.2 : 1.8} />}
               label="Settings"
               focused={focused}
             />

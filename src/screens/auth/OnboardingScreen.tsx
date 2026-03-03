@@ -9,7 +9,8 @@ import {
   Alert,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import {useAuth} from '../../context/AuthContext';
 import {useLock} from '../../context/LockContext';
 import {
@@ -44,6 +45,8 @@ const TOTAL_STEPS = 3;
 const OnboardingScreen: React.FC = () => {
   const {completeOnboarding} = useAuth();
   const {selectApps, updateSettings: updateLockSettings, requestAuthorization} = useLock();
+  const {colors, barStyle} = useTheme();
+  const styles = makeStyles(colors);
 
   const [step, setStep] = useState(0);
   const [appsSelected, setAppsSelected] = useState(false);
@@ -139,13 +142,13 @@ const OnboardingScreen: React.FC = () => {
           <>
             <Lock size={20} color={Colors.primary} strokeWidth={2} />
             <Text style={styles.selectAppsBtnText}>Select Apps to Block</Text>
-            <ChevronRight size={18} color={Colors.textSecondary} strokeWidth={2} />
+            <ChevronRight size={18} color={colors.textSecondary} strokeWidth={2} />
           </>
         )}
       </TouchableOpacity>
 
       <View style={styles.privacyNote}>
-        <ShieldCheck size={14} color={Colors.textMuted} strokeWidth={2} />
+        <ShieldCheck size={14} color={colors.textMuted} strokeWidth={2} />
         <Text style={styles.privacyText}>
           App selection uses iOS Screen Time. GymBuddy never sees which apps
           you choose.
@@ -286,7 +289,7 @@ const OnboardingScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
 
       {/* ── Top header ── */}
       <View style={styles.header}>
@@ -331,8 +334,8 @@ const OnboardingScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: Colors.background},
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.background},
 
   // Header / progress
   header: {
@@ -350,10 +353,10 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   progressActive: {backgroundColor: Colors.primary},
-  progressInactive: {backgroundColor: Colors.border},
+  progressInactive: {backgroundColor: colors.border},
   stepCounter: {
     ...Typography.label,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     minWidth: 40,
     textAlign: 'right',
   },
@@ -386,13 +389,13 @@ const styles = StyleSheet.create({
   // Titles
   stepTitle: {
     ...Typography.h2,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
   },
   stepSubtitle: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Spacing.xl,
@@ -404,10 +407,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
     width: '100%',
@@ -419,7 +422,7 @@ const styles = StyleSheet.create({
   },
   selectAppsBtnText: {
     ...Typography.body,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     fontWeight: '600',
     flex: 1,
   },
@@ -427,14 +430,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.xs,
     alignItems: 'flex-start',
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: Radius.sm,
     padding: Spacing.sm,
     width: '100%',
   },
   privacyText: {
     ...Typography.caption,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     flex: 1,
     lineHeight: 16,
   },
@@ -444,7 +447,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     ...Typography.body,
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
 
   // Step 2 — Days
@@ -461,9 +464,9 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   dayPillActive: {
     backgroundColor: Colors.primary,
@@ -471,21 +474,21 @@ const styles = StyleSheet.create({
   },
   dayPillText: {
     ...Typography.label,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '700',
     fontSize: 12,
   },
   dayPillTextActive: {color: Colors.white},
   daysHint: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: Spacing.sm,
   },
 
   // Step 3 — Time
   timeLabel: {
     ...Typography.label,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     alignSelf: 'flex-start',
     marginBottom: Spacing.sm,
     letterSpacing: 1,
@@ -499,9 +502,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: Radius.full,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   timePillActive: {
     backgroundColor: Colors.primary,
@@ -509,14 +512,14 @@ const styles = StyleSheet.create({
   },
   timePillText: {
     ...Typography.bodySmall,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   timePillTextActive: {color: Colors.white},
   timePreview: {
     marginTop: Spacing.xl,
     alignItems: 'center',
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
@@ -529,7 +532,7 @@ const styles = StyleSheet.create({
   },
   timePreviewSub: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     marginTop: 2,
   },
 
@@ -541,21 +544,21 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: colors.border,
   },
   backBtn: {
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
     borderRadius: Radius.md,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backBtnText: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   continueBtn: {

@@ -11,7 +11,8 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {ChevronLeft, ChevronRight, Smartphone, Lock, ShieldAlert} from 'lucide-react-native';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import {useLock} from '../../context/LockContext';
 import PrimaryButton from '../../components/common/PrimaryButton';
 
@@ -25,13 +26,15 @@ const AppSelectionScreen: React.FC = () => {
     requestAuthorization,
     selectApps,
   } = useLock();
+  const {colors, barStyle} = useTheme();
+  const styles = makeStyles(colors);
 
   const isLocked = status === 'locked';
   const hasApps = selectedAppCount > 0;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
@@ -42,7 +45,7 @@ const AppSelectionScreen: React.FC = () => {
             style={styles.backBtn}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}>
-            <ChevronLeft size={22} color={Colors.textPrimary} strokeWidth={2} />
+            <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
           <Text style={styles.title}>App Selection</Text>
           <Text style={styles.subtitle}>
@@ -134,7 +137,7 @@ const AppSelectionScreen: React.FC = () => {
             ) : (
               <View style={styles.emptyState}>
                 <View style={styles.emptyStateIconWrap}>
-                  <Smartphone size={44} color={Colors.textMuted} strokeWidth={1.4} />
+                  <Smartphone size={44} color={colors.textMuted} strokeWidth={1.4} />
                 </View>
                 <Text style={styles.emptyStateText}>No apps selected yet</Text>
                 <Text style={styles.emptyStateHint}>
@@ -151,8 +154,8 @@ const AppSelectionScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: Colors.background},
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.background},
   scroll: {paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl},
   header: {
     paddingTop: Spacing.lg,
@@ -162,34 +165,34 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.md,
   },
-  title: {...Typography.h2, color: Colors.textPrimary, marginBottom: Spacing.xs},
-  subtitle: {...Typography.body, color: Colors.textSecondary, lineHeight: 22},
+  title: {...Typography.h2, color: colors.textPrimary, marginBottom: Spacing.xs},
+  subtitle: {...Typography.body, color: colors.textSecondary, lineHeight: 22},
   // Gate
   gateCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.xl,
     alignItems: 'center',
   },
   gateIconWrap: {marginBottom: Spacing.md},
   gateTitle: {
     ...Typography.h4,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginBottom: Spacing.sm,
     textAlign: 'center',
   },
   gateDesc: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Spacing.lg,
@@ -199,10 +202,10 @@ const styles = StyleSheet.create({
   countCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     gap: Spacing.md,
@@ -211,37 +214,37 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: Radius.md,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     justifyContent: 'center',
     alignItems: 'center',
   },
   countBadgeActive: {
     backgroundColor: Colors.primary,
   },
-  countNumber: {...Typography.h2, color: Colors.textPrimary},
+  countNumber: {...Typography.h2, color: colors.textPrimary},
   countInfo: {flex: 1},
-  countTitle: {...Typography.h4, color: Colors.textPrimary, marginBottom: 3},
-  countSubtitle: {...Typography.bodySmall, color: Colors.textMuted, lineHeight: 18},
+  countTitle: {...Typography.h4, color: colors.textPrimary, marginBottom: 3},
+  countSubtitle: {...Typography.bodySmall, color: colors.textMuted, lineHeight: 18},
   // Picker button
   pickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: Radius.lg,
     borderWidth: 1.5,
-    borderColor: Colors.borderFocused,
+    borderColor: colors.borderFocused,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     gap: Spacing.md,
     minHeight: 64,
   },
   pickerButtonDisabled: {
-    borderColor: Colors.border,
+    borderColor: colors.border,
     opacity: 0.5,
   },
   pickerContent: {flex: 1},
   pickerTitle: {...Typography.h4, color: Colors.primary, marginBottom: 2},
-  pickerSubtitle: {...Typography.bodySmall, color: Colors.textMuted},
+  pickerSubtitle: {...Typography.bodySmall, color: colors.textMuted},
   lockedNotice: {
     backgroundColor: 'rgba(255,76,106,0.1)',
     borderRadius: Radius.md,
@@ -254,7 +257,7 @@ const styles = StyleSheet.create({
   // Selected apps section
   sectionLabel: {
     ...Typography.label,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     marginBottom: Spacing.sm,
@@ -269,17 +272,17 @@ const styles = StyleSheet.create({
   appTile: {
     width: 72,
     height: 80,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
   appTileLabel: {
     fontSize: 10,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '500',
   },
   privacyNote: {
@@ -292,7 +295,7 @@ const styles = StyleSheet.create({
   },
   privacyNoteText: {
     ...Typography.bodySmall,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 18,
     textAlign: 'center',
   },
@@ -305,11 +308,11 @@ const styles = StyleSheet.create({
   emptyStateIconWrap: {marginBottom: Spacing.xs},
   emptyStateText: {
     ...Typography.h4,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   emptyStateHint: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: Spacing.lg,

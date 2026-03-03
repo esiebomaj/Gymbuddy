@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import {useLock} from '../../context/LockContext';
 import PrimaryButton from '../../components/common/PrimaryButton';
 
@@ -36,21 +37,21 @@ const formatDate = (date: Date | null): string => {
 
 // ── Status config map ─────────────────────────────────────────────────────────
 
-const STATUS_CONFIG = {
+const getStatusConfig = (colors: AppColors) => ({
   unauthorized: {
     emoji: '🔐',
     label: 'Setup Required',
-    color: Colors.textMuted,
-    ringColor: Colors.border,
-    bg: Colors.surface,
+    color: colors.textMuted,
+    ringColor: colors.border,
+    bg: colors.surface,
     desc: 'Grant Screen Time permission to get started',
   },
   idle: {
     emoji: '⚙️',
     label: 'Not Set Up',
-    color: Colors.textSecondary,
-    ringColor: Colors.borderLight,
-    bg: Colors.surface,
+    color: colors.textSecondary,
+    ringColor: colors.borderLight,
+    bg: colors.surface,
     desc: 'Select apps to restrict — they lock immediately and stay locked until you hit the gym',
   },
   locked: {
@@ -69,7 +70,7 @@ const STATUS_CONFIG = {
     bg: 'rgba(255,107,53,0.08)',
     desc: 'Workout verified! Your apps are unlocked for today',
   },
-} as const;
+}) as const;
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -83,8 +84,9 @@ const LockStatusScreen: React.FC = () => {
     isLoading,
     requestAuthorization,
   } = useLock();
-
-  const cfg = STATUS_CONFIG[status];
+  const {colors, barStyle} = useTheme();
+  const styles = makeStyles(colors);
+  const cfg = getStatusConfig(colors)[status];
 
   // Pulsing ring animation
   const pulse = useRef(new Animated.Value(1)).current;
@@ -135,7 +137,7 @@ const LockStatusScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
@@ -251,12 +253,12 @@ const LockStatusScreen: React.FC = () => {
 const RING_SIZE = 140;
 const RING_INNER_SIZE = 104;
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: Colors.background},
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.background},
   scroll: {paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl},
   header: {paddingTop: Spacing.lg, paddingBottom: Spacing.xl},
-  title: {...Typography.h2, color: Colors.textPrimary, marginBottom: Spacing.xs},
-  subtitle: {...Typography.body, color: Colors.textSecondary},
+  title: {...Typography.h2, color: colors.textPrimary, marginBottom: Spacing.xs},
+  subtitle: {...Typography.body, color: colors.textSecondary},
 
   // Hero card
   heroCard: {
@@ -287,13 +289,13 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   statusEmoji: {fontSize: 44},
   statusLabel: {...Typography.h2, marginBottom: Spacing.xs},
   statusDesc: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -311,10 +313,10 @@ const styles = StyleSheet.create({
   // Stats row
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     marginBottom: Spacing.lg,
     overflow: 'hidden',
   },
@@ -322,17 +324,17 @@ const styles = StyleSheet.create({
   statDivider: {
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
-  statValue: {...Typography.h4, color: Colors.textPrimary, marginBottom: 3},
-  statLabel: {...Typography.caption, color: Colors.textMuted, textAlign: 'center'},
+  statValue: {...Typography.h4, color: colors.textPrimary, marginBottom: 3},
+  statLabel: {...Typography.caption, color: colors.textMuted, textAlign: 'center'},
 
   // Detail card
   detailCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     marginBottom: Spacing.lg,
     overflow: 'hidden',
   },
@@ -343,9 +345,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: 14,
   },
-  detailSep: {height: 1, backgroundColor: Colors.border, marginHorizontal: Spacing.md},
-  detailKey: {...Typography.body, color: Colors.textSecondary},
-  detailValue: {...Typography.body, color: Colors.textPrimary, fontWeight: '500'},
+  detailSep: {height: 1, backgroundColor: colors.border, marginHorizontal: Spacing.md},
+  detailKey: {...Typography.body, color: colors.textSecondary},
+  detailValue: {...Typography.body, color: colors.textPrimary, fontWeight: '500'},
   statusPill: {
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
@@ -357,7 +359,7 @@ const styles = StyleSheet.create({
   actionSection: {gap: Spacing.sm},
   unlockedHint: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
     marginTop: Spacing.xs,

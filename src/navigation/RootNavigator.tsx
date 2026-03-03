@@ -2,7 +2,8 @@ import React from 'react';
 import {View, ActivityIndicator, StyleSheet} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {RootStackParamList} from './types';
-import {Colors} from '../theme';
+import {Colors, type AppColors} from '../theme';
+import {useTheme} from '../context/ThemeContext';
 import {useAuth} from '../context/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import MainStackNavigator from './MainStackNavigator';
@@ -12,6 +13,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator: React.FC = () => {
   const {user, isLoading, needsOnboarding} = useAuth();
+  const {colors} = useTheme();
+  const styles = makeStyles(colors);
 
   if (isLoading) {
     return (
@@ -34,12 +37,12 @@ const RootNavigator: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   loading: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
 });
 

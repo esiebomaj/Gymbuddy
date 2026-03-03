@@ -11,17 +11,32 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {launchCamera, type CameraOptions} from 'react-native-image-picker';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import {useLock} from '../../context/LockContext';
 import PrimaryButton from '../../components/common/PrimaryButton';
+
+// ── Constants ────────────────────────────────────────────────────────────────
+
+const WORKOUT_TYPES = [
+  {key: 'weights',   label: 'Weights',   icon: '🏋️'},
+  {key: 'cardio',    label: 'Cardio',    icon: '🏃'},
+  {key: 'hiit',      label: 'HIIT',      icon: '⚡'},
+  {key: 'sport',     label: 'Sport',     icon: '⚽'},
+  {key: 'yoga',      label: 'Yoga',      icon: '🧘'},
+  {key: 'other',     label: 'Other',     icon: '💪'},
+];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const ProofSubmissionScreen: React.FC = () => {
   const {status, isLoading, submitProof, settings} = useLock();
+  const {colors, isDark, barStyle} = useTheme();
+  const styles = makeStyles(colors);
 
   const [photoTaken, setPhotoTaken] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | undefined>();
+  const [selectedWorkout, setSelectedWorkout] = useState<string>('other');
   const [submitted, setSubmitted] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
@@ -68,7 +83,7 @@ const ProofSubmissionScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
-      await submitProof('other', undefined, photoUri);
+      await submitProof(selectedWorkout, undefined, photoUri);
       setSubmitted(true);
       setShowForm(false);
     } catch {
@@ -81,6 +96,7 @@ const ProofSubmissionScreen: React.FC = () => {
   const handleLogAnother = () => {
     setPhotoTaken(false);
     setPhotoUri(undefined);
+    setSelectedWorkout('other');
     setSubmitted(false);
     setShowForm(true);
   };
@@ -89,7 +105,7 @@ const ProofSubmissionScreen: React.FC = () => {
   if ((isUnlocked || submitted) && !showForm) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+        <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
         <View style={styles.successContainer}>
           <Text style={styles.successEmoji}>🏆</Text>
           <Text style={styles.successTitle}>Apps Unlocked!</Text>
@@ -116,7 +132,7 @@ const ProofSubmissionScreen: React.FC = () => {
   // ── Main form ──
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -172,6 +188,31 @@ const ProofSubmissionScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
+        {/* ── Workout Type ── */}
+        <View style={styles.stepCard}>
+          <View style={styles.stepHeader}>
+            <View style={[styles.stepBadge, selectedWorkout !== 'other' && styles.stepBadgeDone]}>
+              <Text style={styles.stepBadgeText}>{selectedWorkout !== 'other' ? '✓' : '2'}</Text>
+            </View>
+            <Text style={styles.stepTitle}>Workout Type</Text>
+            <Text style={styles.stepOptional}>Optional</Text>
+          </View>
+          <View style={styles.pillGrid}>
+            {WORKOUT_TYPES.map(w => (
+              <TouchableOpacity
+                key={w.key}
+                style={[styles.pill, selectedWorkout === w.key && styles.pillSelected]}
+                onPress={() => setSelectedWorkout(w.key)}
+                activeOpacity={0.7}>
+                <Text style={styles.pillIcon}>{w.icon}</Text>
+                <Text style={[styles.pillLabel, selectedWorkout === w.key && styles.pillLabelSelected]}>
+                  {w.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {/* ── Submit ── */}
         <View style={styles.submitSection}>
           <PrimaryButton
@@ -194,14 +235,14 @@ const ProofSubmissionScreen: React.FC = () => {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: Colors.background},
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.background},
   scroll: {paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl},
 
   // Header
   header: {paddingTop: Spacing.lg, paddingBottom: Spacing.xl},
-  title: {...Typography.h2, color: Colors.textPrimary, marginBottom: Spacing.xs},
-  subtitle: {...Typography.body, color: Colors.textSecondary, lineHeight: 22},
+  title: {...Typography.h2, color: colors.textPrimary, marginBottom: Spacing.xs},
+  subtitle: {...Typography.body, color: colors.textSecondary, lineHeight: 22},
 
   // Warning
   warningCard: {
@@ -216,10 +257,10 @@ const styles = StyleSheet.create({
 
   // Step card
   stepCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },
@@ -233,9 +274,9 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -243,8 +284,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success,
     borderColor: Colors.success,
   },
-  stepBadgeText: {color: Colors.textPrimary, fontSize: 12, fontWeight: '700'},
-  stepTitle: {...Typography.h4, color: Colors.textPrimary, flex: 1},
+  stepBadgeText: {color: colors.textPrimary, fontSize: 12, fontWeight: '700'},
+  stepTitle: {...Typography.h4, color: colors.textPrimary, flex: 1},
   stepRequired: {
     ...Typography.caption,
     color: Colors.error,
@@ -252,6 +293,37 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  stepOptional: {
+    ...Typography.caption,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // Workout pills
+  pillGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
+    backgroundColor: colors.surfaceElevated,
+    gap: 6,
+  },
+  pillSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: 'rgba(255,107,53,0.12)',
+  },
+  pillIcon: {fontSize: 16},
+  pillLabel: {...Typography.bodySmall, color: colors.textSecondary, fontWeight: '500'},
+  pillLabelSelected: {color: Colors.primary, fontWeight: '700'},
 
   // Photo box
   photoBox: {
@@ -259,10 +331,10 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: Colors.borderLight,
+    borderColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     gap: Spacing.xs,
   },
   photoBoxDone: {
@@ -271,10 +343,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(34,224,154,0.06)',
   },
   photoCameraIcon: {fontSize: 40, marginBottom: Spacing.xs},
-  photoBoxText: {...Typography.h4, color: Colors.textSecondary},
+  photoBoxText: {...Typography.h4, color: colors.textSecondary},
   photoBoxSubtext: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     paddingHorizontal: Spacing.lg,
   },
@@ -300,7 +372,7 @@ const styles = StyleSheet.create({
   submitSection: {gap: Spacing.md, marginTop: Spacing.sm},
   submitHint: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -315,22 +387,22 @@ const styles = StyleSheet.create({
   successEmoji: {fontSize: 72, marginBottom: Spacing.lg},
   successTitle: {
     ...Typography.h1,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
   },
   successDesc: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: Spacing.xl,
   },
   nextLockCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.lg,
     width: '100%',
     alignItems: 'center',
@@ -339,13 +411,13 @@ const styles = StyleSheet.create({
   },
   nextLockLabel: {
     ...Typography.label,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   nextLockTime: {...Typography.h3, color: Colors.primary},
   logAnotherBtn: {paddingVertical: Spacing.sm},
-  logAnotherText: {...Typography.body, color: Colors.textMuted},
+  logAnotherText: {...Typography.body, color: colors.textMuted},
 });
 
 export default ProofSubmissionScreen;

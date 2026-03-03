@@ -13,7 +13,8 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {AuthStackParamList} from '../../navigation/types';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import {KeyRound} from 'lucide-react-native';
 import InputField from '../../components/common/InputField';
 import PrimaryButton from '../../components/common/PrimaryButton';
@@ -28,6 +29,8 @@ const ForgotPasswordScreen: React.FC<Props> = ({navigation}) => {
   const [emailError, setEmailError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const {colors, barStyle} = useTheme();
+  const styles = makeStyles(colors);
 
   const {sendPasswordReset} = useAuth();
 
@@ -59,7 +62,7 @@ const ForgotPasswordScreen: React.FC<Props> = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}>
@@ -146,8 +149,8 @@ const ForgotPasswordScreen: React.FC<Props> = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: Colors.background},
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.background},
   flex: {flex: 1},
   scrollContent: {
     flexGrow: 1,
@@ -165,9 +168,9 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: Radius.xl,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Spacing.xl,
@@ -176,20 +179,20 @@ const styles = StyleSheet.create({
   iconEmoji: {fontSize: 40},
   title: {
     ...Typography.h2,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   subtitle: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 22,
     marginBottom: Spacing.xl,
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
   },
@@ -197,10 +200,10 @@ const styles = StyleSheet.create({
   backToSignInText: {color: Colors.primary, fontSize: 15, fontWeight: '500'},
   // Success state
   emailBadge: {
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: colors.borderLight,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     marginBottom: Spacing.lg,
@@ -212,7 +215,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   hint: {
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,

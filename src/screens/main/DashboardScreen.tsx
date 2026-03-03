@@ -13,7 +13,8 @@ import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Smartphone, Settings as SettingsIcon} from 'lucide-react-native';
 import {MainTabParamList, MainStackParamList} from '../../navigation/types';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import {useAuth} from '../../context/AuthContext';
 import {useLock} from '../../context/LockContext';
 
@@ -24,28 +25,28 @@ type Props = {
   >;
 };
 
-const statusConfig = {
+const getStatusConfig = (colors: AppColors, isDark: boolean) => ({
   unauthorized: {
     emoji: '🔐',
     label: 'Setup Required',
-    color: Colors.textMuted,
-    bg: Colors.surfaceElevated,
-    border: Colors.border,
+    color: colors.textMuted,
+    bg: colors.surfaceElevated,
+    border: colors.border,
     description: 'Authorize Screen Time to get started',
   },
   idle: {
     emoji: '⚙️',
     label: 'Not Set Up',
-    color: Colors.textSecondary,
-    bg: Colors.surfaceElevated,
-    border: Colors.border,
+    color: colors.textSecondary,
+    bg: colors.surfaceElevated,
+    border: colors.border,
     description: 'Select apps to restrict — they lock immediately until you hit the gym',
   },
   locked: {
     emoji: '🔒',
     label: 'Apps Locked',
     color: Colors.error,
-    bg: '#2E0A14',
+    bg: isDark ? '#2E0A14' : 'rgba(255,76,106,0.08)',
     border: Colors.error,
     description: 'Submit gym proof to unlock your apps',
   },
@@ -53,23 +54,18 @@ const statusConfig = {
     emoji: '🏋️',
     label: 'Gym Done!',
     color: Colors.primary,
-    bg: '#2E1A0A',
+    bg: isDark ? '#2E1A0A' : 'rgba(255,107,53,0.08)',
     border: Colors.primary,
     description: 'Workout verified! Apps are unlocked for today',
   },
-};
+});
 
 const DashboardScreen: React.FC<Props> = ({navigation}) => {
   const {user} = useAuth();
   const {status, selectedAppCount, elapsedSeconds, stats, refreshStats} = useLock();
-
-  useFocusEffect(
-    useCallback(() => {
-      refreshStats();
-    }, [refreshStats]),
-  );
-
-  const cfg = statusConfig[status];
+  const {colors, isDark, barStyle} = useTheme();
+  const styles = makeStyles(colors);
+  const cfg = getStatusConfig(colors, isDark)[status];
 
   const formatElapsed = (secs: number) => {
     const h = Math.floor(secs / 3600);
@@ -82,7 +78,7 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
@@ -183,7 +179,7 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
           style={styles.navCard}
           onPress={() => navigation.navigate('Settings')}>
           <View style={[styles.navIcon, {backgroundColor: '#1A1A2E'}]}>
-            <SettingsIcon size={24} color={Colors.textSecondary} strokeWidth={1.8} />
+            <SettingsIcon size={24} color={colors.textSecondary} strokeWidth={1.8} />
           </View>
           <View style={styles.navContent}>
             <Text style={styles.navTitle}>Settings</Text>
@@ -206,8 +202,8 @@ const getTimeOfDay = () => {
   return ' evening';
 };
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: Colors.background},
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.background},
   scroll: {
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xxl,
@@ -221,11 +217,11 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
-  userName: {...Typography.h3, color: Colors.textPrimary, marginTop: 2},
+  userName: {...Typography.h3, color: colors.textPrimary, marginTop: 2},
   // Hero
   heroCard: {
     borderRadius: Radius.lg,
@@ -238,7 +234,7 @@ const styles = StyleSheet.create({
   heroStatus: {...Typography.h3, marginBottom: Spacing.xs},
   heroDescription: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -255,10 +251,10 @@ const styles = StyleSheet.create({
   // Stats
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     marginBottom: Spacing.xl,
     overflow: 'hidden',
   },
@@ -271,23 +267,23 @@ const styles = StyleSheet.create({
   statDivider: {
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   statValue: {
     ...Typography.h4,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   statLabel: {
     ...Typography.caption,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionTitle: {
     ...Typography.label,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     marginBottom: Spacing.md,
@@ -296,15 +292,15 @@ const styles = StyleSheet.create({
   navCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     gap: Spacing.md,
   },
-  navCardHighlight: {borderColor: Colors.borderLight},
+  navCardHighlight: {borderColor: colors.borderLight},
   navIcon: {
     width: 48,
     height: 48,
@@ -314,13 +310,13 @@ const styles = StyleSheet.create({
   },
   navEmoji: {fontSize: 24},
   navContent: {flex: 1},
-  navTitle: {...Typography.h4, color: Colors.textPrimary, marginBottom: 3},
+  navTitle: {...Typography.h4, color: colors.textPrimary, marginBottom: 3},
   navSubtitle: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     lineHeight: 18,
   },
-  navChevron: {fontSize: 22, color: Colors.textMuted},
+  navChevron: {fontSize: 22, color: colors.textMuted},
   urgentBadge: {
     width: 24,
     height: 24,
@@ -332,10 +328,10 @@ const styles = StyleSheet.create({
   urgentText: {color: Colors.white, fontWeight: '700', fontSize: 14},
   // Streak card
   streakCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.md,
     marginBottom: Spacing.lg,
   },
@@ -347,7 +343,7 @@ const styles = StyleSheet.create({
   },
   streakSectionLabel: {
     ...Typography.label,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
   },
@@ -360,10 +356,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary + '44',
   },
   streakBadgeDim: {
-    backgroundColor: Colors.surfaceElevated,
-    borderColor: Colors.border,
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
   },
-  streakBadgeText: {fontSize: 13, fontWeight: '700', color: Colors.textPrimary},
+  streakBadgeText: {fontSize: 13, fontWeight: '700', color: colors.textPrimary},
   dotsRow: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
@@ -384,9 +380,9 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   dotEmpty: {
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 2,
-    borderColor: Colors.borderLight,
+    borderColor: colors.borderLight,
   },
   streakCountRow: {
     flexDirection: 'row',
@@ -395,18 +391,18 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   streakVisits: {fontSize: 36, fontWeight: '800', color: Colors.primary},
-  streakSep: {fontSize: 28, fontWeight: '300', color: Colors.textMuted},
-  streakGoalNum: {fontSize: 36, fontWeight: '800', color: Colors.textSecondary},
-  streakCountLabel: {...Typography.body, color: Colors.textMuted, marginLeft: 4},
+  streakSep: {fontSize: 28, fontWeight: '300', color: colors.textMuted},
+  streakGoalNum: {fontSize: 36, fontWeight: '800', color: colors.textSecondary},
+  streakCountLabel: {...Typography.body, color: colors.textMuted, marginLeft: 4},
   goalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: colors.border,
   },
-  goalLabel: {...Typography.body, color: Colors.textSecondary},
+  goalLabel: {...Typography.body, color: colors.textSecondary},
   goalStepper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -416,15 +412,15 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   stepperBtnDisabled: {opacity: 0.3},
-  stepperBtnText: {fontSize: 18, fontWeight: '700', color: Colors.textPrimary, lineHeight: 22},
-  stepperValue: {...Typography.h4, color: Colors.textPrimary, minWidth: 64, textAlign: 'center'},
+  stepperBtnText: {fontSize: 18, fontWeight: '700', color: colors.textPrimary, lineHeight: 22},
+  stepperValue: {...Typography.h4, color: colors.textPrimary, minWidth: 64, textAlign: 'center'},
 });
 
 export default DashboardScreen;

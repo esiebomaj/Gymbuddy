@@ -13,7 +13,8 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {AuthStackParamList} from '../../navigation/types';
-import {Colors, Spacing, Radius, Typography} from '../../theme';
+import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
+import {useTheme} from '../../context/ThemeContext';
 import InputField from '../../components/common/InputField';
 import PrimaryButton from '../../components/common/PrimaryButton';
 import {GoogleLogo} from '../../components/common/SocialButton';
@@ -31,6 +32,8 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
+  const {colors, barStyle} = useTheme();
+  const styles = makeStyles(colors);
 
   const {signIn, signInWithGoogle, signInWithApple} = useAuth();
 
@@ -88,7 +91,7 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}>
@@ -180,10 +183,10 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   flex: {
     flex: 1,
@@ -200,19 +203,19 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Typography.h2,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     marginBottom: Spacing.xs,
   },
   subtitle: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     padding: Spacing.lg,
   },
   forgotRow: {
@@ -238,11 +241,11 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: colors.border,
   },
   dividerText: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -252,14 +255,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 54,
     borderRadius: Radius.md,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     gap: Spacing.sm,
   },
   googleButtonText: {
     ...Typography.h4,
-    color: Colors.textPrimary,
+    color: colors.textPrimary,
     letterSpacing: 0.3,
   },
   footer: {
@@ -269,7 +272,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   footerText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 15,
   },
   footerLink: {
@@ -287,11 +290,11 @@ const styles = StyleSheet.create({
   orLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: colors.border,
   },
   orText: {
     ...Typography.bodySmall,
-    color: Colors.textMuted,
+    color: colors.textMuted,
   },
   socialStack: {
     flexDirection: 'row',
