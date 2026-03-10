@@ -33,11 +33,18 @@ const DAYS = [
   {label: 'Su', full: 'Sunday', value: 0},
 ];
 
-const HOURS = Array.from({length: 18}, (_, i) => {
-  const h = i + 5; // 5am – 10pm
+const HOURS = Array.from({length: 24}, (_, i) => {
+  const h = i; // 12AM – 11PM (full 24h)
   const suffix = h < 12 ? 'AM' : 'PM';
   const display = h === 12 ? 12 : h > 12 ? h - 12 : h;
   return {label: `${display}${suffix}`, value: `${String(h).padStart(2, '0')}:00`};
+});
+
+const END_HOURS = Array.from({length: 24}, (_, i) => {
+  const h = i;
+  const suffix = h < 12 ? 'AM' : 'PM';
+  const display = h === 12 ? 12 : h > 12 ? h - 12 : h;
+  return {time: `${display}:59`, suffix, value: `${String(h).padStart(2, '0')}:59`};
 });
 
 const TOTAL_STEPS = 3;
@@ -52,7 +59,7 @@ const OnboardingScreen: React.FC = () => {
   const [appsSelected, setAppsSelected] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [startTime, setStartTime] = useState('06:00');
-  const [endTime, setEndTime] = useState('22:00');
+  const [endTime, setEndTime] = useState('23:59');
   const [loading, setLoading] = useState(false);
 
   // ── Step actions ─────────────────────────────────────────────────────────────
@@ -217,6 +224,7 @@ const OnboardingScreen: React.FC = () => {
       <Text style={styles.timeLabel}>Locks at</Text>
       <ScrollView
         horizontal
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.timeScroll}>
         {HOURS.map(h => {
@@ -245,22 +253,31 @@ const OnboardingScreen: React.FC = () => {
       </Text>
       <ScrollView
         horizontal
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.timeScroll}>
-        {HOURS.map(h => {
+        {END_HOURS.map(h => {
           const active = endTime === h.value;
           return (
             <TouchableOpacity
               key={h.value}
-              style={[styles.timePill, active && styles.timePillActive]}
+              style={[styles.timePill, active && styles.timePillActive, {alignItems: 'center'}]}
               onPress={() => setEndTime(h.value)}
               activeOpacity={0.75}>
               <Text
                 style={[
                   styles.timePillText,
                   active && styles.timePillTextActive,
+                  {textAlign: 'center'},
                 ]}>
-                {h.label}
+                {h.time}
+              </Text>
+              <Text
+                style={[
+                  styles.timePillSuffix,
+                  active && styles.timePillTextActive,
+                ]}>
+                {h.suffix}
               </Text>
             </TouchableOpacity>
           );
@@ -277,14 +294,14 @@ const OnboardingScreen: React.FC = () => {
   );
 
   const formatTime = (val: string) => {
-    const [hStr] = val.split(':');
+    const [hStr, mStr] = val.split(':');
     const h = parseInt(hStr, 10);
     const suffix = h < 12 ? 'AM' : 'PM';
     const disp = h === 12 ? 12 : h > 12 ? h - 12 : h === 0 ? 12 : h;
-    return `${disp}:00 ${suffix}`;
+    return `${disp}:${mStr} ${suffix}`;
   };
 
-  const steps = [<StepApps key="apps" />, <StepDays key="days" />, <StepTime key="time" />];
+  const steps = [StepApps(), StepDays(), StepTime()];
   const isLastStep = step === TOTAL_STEPS - 1;
 
   return (
@@ -303,7 +320,8 @@ const OnboardingScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        directionalLockEnabled>
         {steps[step]}
       </ScrollView>
 
@@ -514,8 +532,15 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     ...Typography.bodySmall,
     color: colors.textSecondary,
     fontWeight: '600',
+    width: '100%',
   },
   timePillTextActive: {color: Colors.white},
+  timePillSuffix: {
+    ...Typography.bodySmall,
+    color: colors.textMuted,
+    fontWeight: '600',
+    marginTop: 1,
+  },
   timePreview: {
     marginTop: Spacing.xl,
     alignItems: 'center',
