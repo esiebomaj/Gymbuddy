@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ViewStyle,
   TouchableOpacityProps,
+  View,
 } from 'react-native';
 import {Colors, Radius, Typography} from '../../theme';
 
@@ -27,44 +28,66 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   const isDisabled = disabled || loading;
 
   return (
-    <TouchableOpacity
-      style={[
-        styles.button,
-        variant === 'primary' && styles.primaryButton,
-        variant === 'outline' && styles.outlineButton,
-        variant === 'ghost' && styles.ghostButton,
-        isDisabled && styles.disabledButton,
-        style,
-      ]}
-      disabled={isDisabled}
-      activeOpacity={0.8}
-      {...props}>
-      {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? Colors.white : Colors.primary}
-          size="small"
-        />
-      ) : (
-        <Text
-          style={[
-            styles.buttonText,
-            variant === 'primary' && styles.primaryText,
-            variant === 'outline' && styles.outlineText,
-            variant === 'ghost' && styles.ghostText,
-          ]}>
-          {title}
-        </Text>
-      )}
-    </TouchableOpacity>
+    <View style={[variant === 'primary' && !isDisabled && styles.glow, style]}>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          variant === 'primary' && styles.primaryButton,
+          variant === 'outline' && styles.outlineButton,
+          variant === 'ghost' && styles.ghostButton,
+          isDisabled && styles.disabledButton,
+        ]}
+        disabled={isDisabled}
+        activeOpacity={0.82}
+        {...props}>
+        {/* Inner top highlight */}
+        {variant === 'primary' && (
+          <View pointerEvents="none" style={styles.innerHighlight} />
+        )}
+        {loading ? (
+          <ActivityIndicator
+            color={variant === 'primary' ? Colors.white : Colors.primary}
+            size="small"
+          />
+        ) : (
+          <Text
+            style={[
+              styles.buttonText,
+              variant === 'primary' && styles.primaryText,
+              variant === 'outline' && styles.outlineText,
+              variant === 'ghost' && styles.ghostText,
+            ]}>
+            {title}
+          </Text>
+        )}
+      </TouchableOpacity>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  glow: {
+    shadowColor: Colors.primary,
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
+    elevation: 8,
+  },
   button: {
-    height: 54,
-    borderRadius: Radius.md,
+    height: 56,
+    borderRadius: Radius.xl,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  innerHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 24,
+    right: 24,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+    borderRadius: 1,
   },
   primaryButton: {
     backgroundColor: Colors.primary,
@@ -78,7 +101,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   disabledButton: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
   buttonText: {
     ...Typography.h4,
@@ -86,6 +109,7 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     color: Colors.white,
+    fontWeight: '700',
   },
   outlineText: {
     color: Colors.primary,

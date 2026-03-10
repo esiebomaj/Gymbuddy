@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Switch,
 } from 'react-native';
+import GlassBackground from '../../components/common/GlassBackground';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Target, Flame, Dumbbell, LogOut, CalendarDays, Clock, X, Check, Moon} from 'lucide-react-native';
 import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
@@ -161,7 +162,8 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
+      <GlassBackground isDark={isDark} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
@@ -210,7 +212,7 @@ const SettingsScreen: React.FC = () => {
           />
           <Separator />
           <SettingRow
-            icon={<Dumbbell size={20} color={Colors.textSecondary} strokeWidth={1.8} />}
+            icon={<Dumbbell size={20} color={Colors.primary} strokeWidth={1.8} />}
             label="Total gym visits"
             value={`${total_visits}`}
           />
@@ -262,18 +264,10 @@ const SettingsScreen: React.FC = () => {
               style={styles.modalCloseBtn}
               onPress={() => setScheduleVisible(false)}
               activeOpacity={0.7}>
-              <X size={20} color={Colors.textPrimary} strokeWidth={2} />
+              <X size={20} color={colors.textPrimary} strokeWidth={2} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Gym Schedule</Text>
-            <TouchableOpacity
-              style={[styles.modalSaveBtn, saving && {opacity: 0.5}]}
-              onPress={saveSchedule}
-              disabled={saving}
-              activeOpacity={0.8}>
-              {saving
-                ? <ActivityIndicator size="small" color={Colors.white} />
-                : <Text style={styles.modalSaveBtnText}>Save</Text>}
-            </TouchableOpacity>
+            <View style={{width: 36}} />
           </View>
 
           <ScrollView
@@ -373,6 +367,19 @@ const SettingsScreen: React.FC = () => {
             </View>
 
           </ScrollView>
+
+          {/* Save button */}
+          <View style={styles.modalSaveFooter}>
+            <TouchableOpacity
+              style={[styles.modalSaveBtn, saving && {opacity: 0.5}]}
+              onPress={saveSchedule}
+              disabled={saving}
+              activeOpacity={0.8}>
+              {saving
+                ? <ActivityIndicator size="small" color={Colors.white} />
+                : <Text style={styles.modalSaveBtnText}>Save Schedule</Text>}
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
@@ -386,31 +393,40 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {flex: 1, backgroundColor: colors.background},
   scroll: {paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl},
   header: {paddingTop: Spacing.lg, paddingBottom: Spacing.lg},
-  title: {...Typography.h2, color: colors.textPrimary},
+  title: {...Typography.h2, color: colors.textPrimary, letterSpacing: -0.5},
 
   // Profile card
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: Spacing.md,
     marginBottom: Spacing.xl,
     gap: Spacing.md,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
   },
   avatarText: {fontSize: 22, fontWeight: '700', color: Colors.white},
   profileInfo: {flex: 1},
-  profileName: {...Typography.h4, color: colors.textPrimary, marginBottom: 3},
+  profileName: {...Typography.h4, color: colors.textPrimary, marginBottom: 3, fontWeight: '700'},
   profileEmail: {...Typography.bodySmall, color: colors.textMuted},
 
   // Sections
@@ -424,12 +440,16 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingHorizontal: Spacing.xs,
   },
   section: {
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     marginBottom: Spacing.md,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
   },
   separator: {height: 1, backgroundColor: colors.border, marginHorizontal: Spacing.md},
 
@@ -471,41 +491,53 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    backgroundColor: colors.glass,
   },
-  modalTitle: {...Typography.h4, color: colors.textPrimary},
+  modalTitle: {...Typography.h4, color: colors.textPrimary, fontWeight: '700'},
   modalCloseBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalSaveFooter: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    paddingBottom: Spacing.xl,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.glass,
   },
   modalSaveBtn: {
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 8,
-    borderRadius: Radius.md,
-    minWidth: 60,
+    paddingVertical: 16,
+    borderRadius: Radius.xl,
     alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.40,
+    shadowRadius: 16,
   },
-  modalSaveBtnText: {color: Colors.white, fontWeight: '700', fontSize: 14},
+  modalSaveBtnText: {color: Colors.white, fontWeight: '700', fontSize: 16},
   modalScroll: {paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl, paddingTop: Spacing.lg},
   modalSection: {marginBottom: Spacing.xl},
   modalSectionHeader: {flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.md},
-  modalSectionTitle: {...Typography.h4, color: colors.textPrimary},
+  modalSectionTitle: {...Typography.h4, color: colors.textPrimary, fontWeight: '600'},
 
   // Days
   daysRow: {flexDirection: 'row', gap: 8, flexWrap: 'nowrap'},
   dayPill: {
     flex: 1,
     aspectRatio: 1,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.glass,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 2,
@@ -513,6 +545,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   dayPillActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
   },
   dayPillText: {...Typography.caption, color: colors.textMuted, fontWeight: '600'},
   dayPillTextActive: {color: Colors.white},
@@ -527,14 +563,18 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   timePill: {
     paddingHorizontal: 14,
     paddingVertical: 9,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.glass,
   },
   timePillActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.40,
+    shadowRadius: 8,
   },
   timePillText: {...Typography.bodySmall, color: colors.textMuted, fontWeight: '600'},
   timePillTextActive: {color: Colors.white},
@@ -542,14 +582,18 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   // Preview
   timePreview: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: Spacing.md,
     marginTop: Spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
   },
-  timePreviewText: {...Typography.h3, color: Colors.primary},
+  timePreviewText: {...Typography.h3, color: Colors.primary, fontWeight: '700'},
   timePreviewSub: {...Typography.caption, color: colors.textMuted, marginTop: 4},
 });
 

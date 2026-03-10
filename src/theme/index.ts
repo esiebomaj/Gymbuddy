@@ -1,43 +1,73 @@
 export const DarkColors = {
-  background: '#0B0B0F',
-  surface: '#161620',
-  surfaceElevated: '#1E1E2C',
+  // ── Backgrounds ──
+  background: '#060614',
+  surface: 'rgba(255,255,255,0.07)',
+  surfaceElevated: 'rgba(255,255,255,0.12)',
+  surfaceStrong: 'rgba(255,255,255,0.17)',
+  // ── Glass tokens ──
+  glass: 'rgba(255,255,255,0.07)',
+  glassBorder: 'rgba(255,255,255,0.15)',
+  glassHighlight: 'rgba(255,255,255,0.22)',
+  // ── Brand ──
   primary: '#FF6B35',
   primaryDark: '#E55A2B',
   primaryLight: '#FF8F66',
-  accent: '#FF3CAC',
+  accent: '#BF5AF2',
+  // ── Base ──
   white: '#FFFFFF',
   black: '#000000',
+  // ── Text ──
   textPrimary: '#FFFFFF',
-  textSecondary: '#A0A0BC',
-  textMuted: '#6B6B88',
-  border: '#2A2A3A',
+  textSecondary: 'rgba(255,255,255,0.62)',
+  textMuted: 'rgba(255,255,255,0.38)',
+  // ── Borders ──
+  border: 'rgba(255,255,255,0.12)',
   borderFocused: '#FF6B35',
-  borderLight: '#383848',
-  error: '#FF4C6A',
-  success: '#22E09A',
+  borderLight: 'rgba(255,255,255,0.07)',
+  // ── States ──
+  error: '#FF453A',
+  success: '#30D158',
+  // ── Glows ──
+  glowPrimary: 'rgba(255,107,53,0.30)',
+  glowError: 'rgba(255,69,58,0.25)',
+  glowSuccess: 'rgba(48,209,88,0.25)',
   googleBg: '#FFFFFF',
   appleBg: '#000000',
 } as const;
 
 export const LightColors = {
-  background: '#F5F5F7',
-  surface: '#FFFFFF',
-  surfaceElevated: '#EEEEF4',
+  // ── Backgrounds ──
+  background: '#F2F2F7',
+  surface: 'rgba(255,255,255,0.78)',
+  surfaceElevated: 'rgba(255,255,255,0.92)',
+  surfaceStrong: '#FFFFFF',
+  // ── Glass tokens ──
+  glass: 'rgba(255,255,255,0.78)',
+  glassBorder: 'rgba(255,255,255,0.95)',
+  glassHighlight: '#FFFFFF',
+  // ── Brand ──
   primary: '#FF6B35',
   primaryDark: '#E55A2B',
   primaryLight: '#FF8F66',
-  accent: '#FF3CAC',
+  accent: '#BF5AF2',
+  // ── Base ──
   white: '#FFFFFF',
   black: '#000000',
-  textPrimary: '#0B0B0F',
-  textSecondary: '#4A4A6A',
-  textMuted: '#8A8AA8',
-  border: '#DDDDE8',
+  // ── Text ──
+  textPrimary: '#000000',
+  textSecondary: 'rgba(0,0,0,0.58)',
+  textMuted: 'rgba(0,0,0,0.36)',
+  // ── Borders ──
+  border: 'rgba(60,60,67,0.13)',
   borderFocused: '#FF6B35',
-  borderLight: '#E8E8F0',
-  error: '#FF4C6A',
-  success: '#22E09A',
+  borderLight: 'rgba(60,60,67,0.06)',
+  // ── States ──
+  error: '#FF3B30',
+  success: '#34C759',
+  // ── Glows ──
+  glowPrimary: 'rgba(255,107,53,0.15)',
+  glowError: 'rgba(255,59,48,0.12)',
+  glowSuccess: 'rgba(52,199,89,0.12)',
   googleBg: '#FFFFFF',
   appleBg: '#000000',
 } as const;
@@ -49,6 +79,10 @@ export type AppColors = {
   background: string;
   surface: string;
   surfaceElevated: string;
+  surfaceStrong: string;
+  glass: string;
+  glassBorder: string;
+  glassHighlight: string;
   primary: string;
   primaryDark: string;
   primaryLight: string;
@@ -63,6 +97,9 @@ export type AppColors = {
   borderLight: string;
   error: string;
   success: string;
+  glowPrimary: string;
+  glowError: string;
+  glowSuccess: string;
   googleBg: string;
   appleBg: string;
 };
@@ -78,10 +115,10 @@ export const Spacing = {
 } as const;
 
 export const Radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 28,
   full: 999,
 } as const;
 

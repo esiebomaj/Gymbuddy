@@ -13,6 +13,7 @@ import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
 import {useTheme} from '../../context/ThemeContext';
 import {useLock} from '../../context/LockContext';
 import PrimaryButton from '../../components/common/PrimaryButton';
+import GlassBackground from '../../components/common/GlassBackground';
 
 // LockStatusScreen is an orphaned screen kept for reference only — not in any navigator
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,7 +85,7 @@ const LockStatusScreen: React.FC = () => {
     isLoading,
     requestAuthorization,
   } = useLock();
-  const {colors, barStyle} = useTheme();
+  const {colors, barStyle, isDark} = useTheme();
   const styles = makeStyles(colors);
   const cfg = getStatusConfig(colors)[status];
 
@@ -137,7 +138,8 @@ const LockStatusScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
+      <GlassBackground isDark={isDark} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
@@ -150,6 +152,10 @@ const LockStatusScreen: React.FC = () => {
 
         {/* ── Pulsing Ring + Status ── */}
         <View style={[styles.heroCard, {backgroundColor: cfg.bg, borderColor: cfg.ringColor + '55'}]}>
+          {/* Top rim highlight */}
+          <View style={styles.heroHighlight} />
+          {/* Ambient glow blob */}
+          <View style={[styles.heroGlow, {backgroundColor: cfg.ringColor + '28'}]} />
           <View style={styles.ringContainer}>
             {/* Outer animated ring */}
             <Animated.View
@@ -169,8 +175,8 @@ const LockStatusScreen: React.FC = () => {
 
           {/* Live timer (only when locked) */}
           {status === 'locked' && (
-            <View style={styles.timerPill}>
-              <Text style={styles.timerText}>⏱ {formatElapsed(elapsedSeconds)}</Text>
+            <View style={[styles.timerPill, {borderColor: Colors.error + '55'}]}>
+              <Text style={[styles.timerText, {color: Colors.error}]}>⏱ {formatElapsed(elapsedSeconds)}</Text>
             </View>
           )}
         </View>
@@ -250,14 +256,14 @@ const LockStatusScreen: React.FC = () => {
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
-const RING_SIZE = 140;
-const RING_INNER_SIZE = 104;
+const RING_SIZE = 148;
+const RING_INNER_SIZE = 108;
 
 const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {flex: 1, backgroundColor: colors.background},
   scroll: {paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl},
   header: {paddingTop: Spacing.lg, paddingBottom: Spacing.xl},
-  title: {...Typography.h2, color: colors.textPrimary, marginBottom: Spacing.xs},
+  title: {...Typography.h2, color: colors.textPrimary, marginBottom: Spacing.xs, letterSpacing: -0.5},
   subtitle: {...Typography.body, color: colors.textSecondary},
 
   // Hero card
@@ -267,6 +273,29 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     padding: Spacing.xl,
     alignItems: 'center',
     marginBottom: Spacing.lg,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.16,
+    shadowRadius: 24,
+  },
+  heroHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 40,
+    right: 40,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.28)',
+    borderRadius: 1,
+  },
+  heroGlow: {
+    position: 'absolute',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    top: -80,
+    alignSelf: 'center',
+    opacity: 0.6,
   },
   ringContainer: {
     width: RING_SIZE,
@@ -280,19 +309,19 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: RING_SIZE,
     height: RING_SIZE,
     borderRadius: RING_SIZE / 2,
-    borderWidth: 2,
+    borderWidth: 1.5,
   },
   ringInner: {
     width: RING_INNER_SIZE,
     height: RING_INNER_SIZE,
     borderRadius: RING_INNER_SIZE / 2,
-    borderWidth: 3,
+    borderWidth: 2.5,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.glass,
   },
-  statusEmoji: {fontSize: 44},
-  statusLabel: {...Typography.h2, marginBottom: Spacing.xs},
+  statusEmoji: {fontSize: 48},
+  statusLabel: {...Typography.h2, marginBottom: Spacing.xs, fontWeight: '700', letterSpacing: -0.5},
   statusDesc: {
     ...Typography.body,
     color: colors.textSecondary,
@@ -301,24 +330,27 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   timerPill: {
     marginTop: Spacing.md,
-    backgroundColor: 'rgba(255,76,106,0.15)',
+    backgroundColor: 'rgba(255,69,58,0.14)',
     borderRadius: Radius.full,
     borderWidth: 1,
-    borderColor: Colors.error + '66',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    paddingVertical: 6,
   },
-  timerText: {color: Colors.error, fontSize: 15, fontWeight: '600', letterSpacing: 0.5},
+  timerText: {fontSize: 15, fontWeight: '700', letterSpacing: 0.5},
 
   // Stats row
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     marginBottom: Spacing.lg,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
   },
   statCard: {flex: 1, alignItems: 'center', paddingVertical: Spacing.md},
   statDivider: {
@@ -326,24 +358,28 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRightWidth: 1,
     borderColor: colors.border,
   },
-  statValue: {...Typography.h4, color: colors.textPrimary, marginBottom: 3},
+  statValue: {...Typography.h4, color: colors.textPrimary, marginBottom: 3, fontWeight: '700'},
   statLabel: {...Typography.caption, color: colors.textMuted, textAlign: 'center'},
 
   // Detail card
   detailCard: {
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     marginBottom: Spacing.lg,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingVertical: 14,
+    paddingVertical: 15,
   },
   detailSep: {height: 1, backgroundColor: colors.border, marginHorizontal: Spacing.md},
   detailKey: {...Typography.body, color: colors.textSecondary},

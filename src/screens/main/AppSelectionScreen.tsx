@@ -15,6 +15,7 @@ import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
 import {useTheme} from '../../context/ThemeContext';
 import {useLock} from '../../context/LockContext';
 import PrimaryButton from '../../components/common/PrimaryButton';
+import GlassBackground from '../../components/common/GlassBackground';
 
 const AppSelectionScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -26,7 +27,7 @@ const AppSelectionScreen: React.FC = () => {
     requestAuthorization,
     selectApps,
   } = useLock();
-  const {colors, barStyle} = useTheme();
+  const {colors, isDark, barStyle} = useTheme();
   const styles = makeStyles(colors);
 
   const isLocked = status === 'locked';
@@ -34,7 +35,8 @@ const AppSelectionScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
+      <GlassBackground isDark={isDark} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
@@ -165,23 +167,27 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.md,
   },
-  title: {...Typography.h2, color: colors.textPrimary, marginBottom: Spacing.xs},
+  title: {...Typography.h2, color: colors.textPrimary, marginBottom: Spacing.xs, letterSpacing: -0.5},
   subtitle: {...Typography.body, color: colors.textSecondary, lineHeight: 22},
   // Gate
   gateCard: {
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: Spacing.xl,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
   },
   gateIconWrap: {marginBottom: Spacing.md},
   gateTitle: {
@@ -189,6 +195,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: Spacing.sm,
     textAlign: 'center',
+    fontWeight: '700',
   },
   gateDesc: {
     ...Typography.body,
@@ -202,54 +209,68 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   countCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     gap: Spacing.md,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
   },
   countBadge: {
     width: 56,
     height: 56,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     backgroundColor: colors.surfaceElevated,
     justifyContent: 'center',
     alignItems: 'center',
   },
   countBadgeActive: {
     backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
   },
-  countNumber: {...Typography.h2, color: colors.textPrimary},
+  countNumber: {...Typography.h2, color: colors.textPrimary, letterSpacing: -1},
   countInfo: {flex: 1},
-  countTitle: {...Typography.h4, color: colors.textPrimary, marginBottom: 3},
+  countTitle: {...Typography.h4, color: colors.textPrimary, marginBottom: 3, fontWeight: '700'},
   countSubtitle: {...Typography.bodySmall, color: colors.textMuted, lineHeight: 18},
   // Picker button
   pickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1.5,
     borderColor: colors.borderFocused,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     gap: Spacing.md,
     minHeight: 64,
+    shadowColor: Colors.primary,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.20,
+    shadowRadius: 12,
   },
   pickerButtonDisabled: {
     borderColor: colors.border,
+    shadowOpacity: 0,
     opacity: 0.5,
   },
   pickerContent: {flex: 1},
-  pickerTitle: {...Typography.h4, color: Colors.primary, marginBottom: 2},
+  pickerTitle: {...Typography.h4, color: Colors.primary, marginBottom: 2, fontWeight: '700'},
   pickerSubtitle: {...Typography.bodySmall, color: colors.textMuted},
   lockedNotice: {
-    backgroundColor: 'rgba(255,76,106,0.1)',
-    borderRadius: Radius.md,
+    backgroundColor: 'rgba(255,69,58,0.10)',
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.error,
+    borderColor: `${Colors.error}55`,
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },
@@ -272,13 +293,17 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   appTile: {
     width: 72,
     height: 80,
-    backgroundColor: colors.surface,
-    borderRadius: Radius.md,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
   },
   appTileLabel: {
     fontSize: 10,
@@ -287,9 +312,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   privacyNote: {
     backgroundColor: 'rgba(255,107,53,0.08)',
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.2)',
+    borderColor: 'rgba(255,107,53,0.22)',
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },
@@ -309,6 +334,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   emptyStateText: {
     ...Typography.h4,
     color: colors.textSecondary,
+    fontWeight: '600',
   },
   emptyStateHint: {
     ...Typography.bodySmall,

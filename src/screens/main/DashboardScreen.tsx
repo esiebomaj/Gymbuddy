@@ -11,12 +11,13 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {CompositeNavigationProp, useFocusEffect} from '@react-navigation/native';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {Smartphone, Settings as SettingsIcon} from 'lucide-react-native';
+import {Smartphone, Settings as SettingsIcon, ChevronRight} from 'lucide-react-native';
 import {MainTabParamList, MainStackParamList} from '../../navigation/types';
 import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
 import {useTheme} from '../../context/ThemeContext';
 import {useAuth} from '../../context/AuthContext';
 import {useLock} from '../../context/LockContext';
+import GlassBackground from '../../components/common/GlassBackground';
 
 type Props = {
   navigation: CompositeNavigationProp<
@@ -30,32 +31,36 @@ const getStatusConfig = (colors: AppColors, isDark: boolean) => ({
     emoji: '🔐',
     label: 'Setup Required',
     color: colors.textMuted,
-    bg: colors.surfaceElevated,
-    border: colors.border,
+    bg: colors.glass,
+    border: colors.glassBorder,
+    glow: 'transparent',
     description: 'Authorize Screen Time to get started',
   },
   idle: {
     emoji: '⚙️',
     label: 'Not Set Up',
     color: colors.textSecondary,
-    bg: colors.surfaceElevated,
-    border: colors.border,
+    bg: colors.glass,
+    border: colors.glassBorder,
+    glow: 'transparent',
     description: 'Select apps to restrict — they lock immediately until you hit the gym',
   },
   locked: {
     emoji: '🔒',
     label: 'Apps Locked',
-    color: Colors.error,
-    bg: isDark ? '#2E0A14' : 'rgba(255,76,106,0.08)',
-    border: Colors.error,
+    color: colors.error,
+    bg: isDark ? 'rgba(255,69,58,0.12)' : 'rgba(255,59,48,0.07)',
+    border: `${colors.error}55`,
+    glow: colors.glowError,
     description: 'Submit gym proof to unlock your apps',
   },
   unlocked: {
     emoji: '🏋️',
     label: 'Gym Done!',
     color: Colors.primary,
-    bg: isDark ? '#2E1A0A' : 'rgba(255,107,53,0.08)',
-    border: Colors.primary,
+    bg: isDark ? 'rgba(255,107,53,0.12)' : 'rgba(255,107,53,0.07)',
+    border: `${Colors.primary}55`,
+    glow: colors.glowPrimary,
     description: 'Workout verified! Apps are unlocked for today',
   },
 });
@@ -66,6 +71,8 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
   const {colors, isDark, barStyle} = useTheme();
   const styles = makeStyles(colors);
   const cfg = getStatusConfig(colors, isDark)[status];
+
+  useFocusEffect(useCallback(() => { refreshStats(); }, [refreshStats]));
 
   const formatElapsed = (secs: number) => {
     const h = Math.floor(secs / 3600);
@@ -78,7 +85,10 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
+      {/* Ambient background blobs */}
+      <GlassBackground isDark={isDark} />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
@@ -91,17 +101,29 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
           </View>
         </View>
 
-        {/* ── Status Hero Card — only show when unlocked ── */}
-        {status === 'unlocked' && (
-        <View style={[styles.heroCard, {backgroundColor: cfg.bg, borderColor: cfg.border}]}>
-          <Text style={styles.heroEmoji}>{cfg.emoji}</Text>
-          <Text style={[styles.heroStatus, {color: cfg.color}]}>{cfg.label}</Text>
-          <Text style={styles.heroDescription}>{cfg.description}</Text>
-        </View>
+        {/* ── Status Hero Card ── (only when locked/unlocked) */}
+        {(status === 'locked' || status === 'unlocked') && (
+          <View style={[styles.heroCard, {backgroundColor: cfg.bg, borderColor: cfg.border}]}>
+            {/* Glow behind hero */}
+            <View style={[styles.heroGlow, {backgroundColor: cfg.glow}]} />
+            {/* Top rim highlight */}
+            <View style={styles.heroHighlight} />
+            <Text style={styles.heroEmoji}>{cfg.emoji}</Text>
+            <Text style={[styles.heroStatus, {color: cfg.color}]}>{cfg.label}</Text>
+            <Text style={styles.heroDescription}>{cfg.description}</Text>
+            {status === 'locked' && (
+              <View style={[styles.timerPill, {borderColor: `${colors.error}55`}]}>
+                <Text style={[styles.timerText, {color: colors.error}]}>
+                  ⏱ {formatElapsed(elapsedSeconds)} locked
+                </Text>
+              </View>
+            )}
+          </View>
         )}
 
         {/* ── Weekly Streak Card ── */}
         <View style={styles.streakCard}>
+          <View style={styles.streakHighlight} />
           {/* Header */}
           <View style={styles.streakHeader}>
             <Text style={styles.streakSectionLabel}>THIS WEEK</Text>
@@ -133,7 +155,6 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
             <Text style={styles.streakGoalNum}>{stats.weekly_goal}</Text>
             <Text style={styles.streakCountLabel}> visits this week</Text>
           </View>
-
         </View>
 
         {/* ── Stats Row ── */}
@@ -144,13 +165,13 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
           </View>
           <View style={[styles.statCard, styles.statDivider]}>
             <Text style={styles.statValue}>{selectedAppCount}</Text>
-            <Text style={styles.statLabel}>Apps Selected</Text>
+            <Text style={styles.statLabel}>Apps Locked</Text>
           </View>
           <View style={[styles.statCard, styles.statDivider]}>
             <Text style={styles.statValue}>
               {status === 'locked' ? formatElapsed(elapsedSeconds) : stats.visited_today ? '✓' : '—'}
             </Text>
-            <Text style={styles.statLabel}>{status === 'locked' ? 'Time Locked' : 'Today'}</Text>
+            <Text style={styles.statLabel}>{status === 'locked' ? 'Locked' : 'Today'}</Text>
           </View>
         </View>
 
@@ -161,34 +182,39 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
           style={styles.navCard}
           onPress={() => navigation.navigate('Apps')}
           activeOpacity={0.7}>
-          <View style={[styles.navIcon, {backgroundColor: '#1A2E3A'}]}>
-            <Smartphone size={24} color={Colors.primary} strokeWidth={1.8} />
+          <View style={styles.navHighlight} />
+          <View style={[styles.navIcon, {backgroundColor: 'rgba(255,107,53,0.18)'}]}>
+            <Smartphone size={22} color={Colors.primary} strokeWidth={1.8} />
           </View>
           <View style={styles.navContent}>
             <Text style={styles.navTitle}>App Selection</Text>
             <Text style={styles.navSubtitle}>
               {selectedAppCount > 0
-                ? `${selectedAppCount} apps locked — tap to change selection`
-                : 'Choose which apps to restrict — they lock immediately'}
+                ? `${selectedAppCount} apps locked — tap to change`
+                : 'Choose which apps to restrict'}
             </Text>
           </View>
-          <Text style={styles.navChevron}>›</Text>
+          <View style={styles.navChevronWrap}>
+            <ChevronRight size={16} color={colors.textMuted} strokeWidth={2} />
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.navCard}
-          onPress={() => navigation.navigate('Settings')}>
-          <View style={[styles.navIcon, {backgroundColor: '#1A1A2E'}]}>
-            <SettingsIcon size={24} color={colors.textSecondary} strokeWidth={1.8} />
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.7}>
+          <View style={styles.navHighlight} />
+          <View style={[styles.navIcon, {backgroundColor: 'rgba(191,90,242,0.16)'}]}>
+            <SettingsIcon size={22} color={colors.accent} strokeWidth={1.8} />
           </View>
           <View style={styles.navContent}>
             <Text style={styles.navTitle}>Settings</Text>
-            <Text style={styles.navSubtitle}>Weekly goal, account & more</Text>
+            <Text style={styles.navSubtitle}>Gym schedule, account & more</Text>
           </View>
-          <Text style={styles.navChevron}>›</Text>
+          <View style={styles.navChevronWrap}>
+            <ChevronRight size={16} color={colors.textMuted} strokeWidth={2} />
+          </View>
         </TouchableOpacity>
-
-
 
       </ScrollView>
     </SafeAreaView>
@@ -219,19 +245,43 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     ...Typography.bodySmall,
     color: colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1,
   },
-  userName: {...Typography.h3, color: colors.textPrimary, marginTop: 2},
-  // Hero
+  userName: {
+    ...Typography.h2,
+    color: colors.textPrimary,
+    marginTop: 4,
+    letterSpacing: -0.5,
+  },
+
+  // ── Hero card ──
   heroCard: {
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
     padding: Spacing.xl,
     alignItems: 'center',
     marginBottom: Spacing.lg,
+    overflow: 'hidden',
   },
-  heroEmoji: {fontSize: 52, marginBottom: Spacing.sm},
-  heroStatus: {...Typography.h3, marginBottom: Spacing.xs},
+  heroGlow: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    top: -80,
+    alignSelf: 'center',
+  },
+  heroHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 40,
+    right: 40,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.30)',
+    borderRadius: 1,
+  },
+  heroEmoji: {fontSize: 54, marginBottom: Spacing.sm},
+  heroStatus: {...Typography.h3, marginBottom: Spacing.xs, fontWeight: '700'},
   heroDescription: {
     ...Typography.body,
     color: colors.textSecondary,
@@ -240,23 +290,110 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   timerPill: {
     marginTop: Spacing.md,
-    backgroundColor: 'rgba(255,76,106,0.15)',
+    backgroundColor: 'rgba(255,69,58,0.12)',
     borderRadius: Radius.full,
+    borderWidth: 1,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    paddingVertical: 6,
   },
-  timerText: {color: Colors.error, fontSize: 13, fontWeight: '600'},
-  heroAction: {marginTop: Spacing.md},
-  heroActionText: {color: Colors.primary, fontSize: 15, fontWeight: '700'},
-  // Stats
+  timerText: {fontSize: 13, fontWeight: '700', letterSpacing: 0.3},
+
+  // ── Streak card ──
+  streakCard: {
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+  },
+  streakHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 20,
+    right: 20,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 1,
+  },
+  streakHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  streakSectionLabel: {
+    ...Typography.label,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  streakBadge: {
+    backgroundColor: 'rgba(255,107,53,0.18)',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: `${Colors.primary}44`,
+  },
+  streakBadgeDim: {
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
+  },
+  streakBadgeText: {fontSize: 13, fontWeight: '700', color: colors.textPrimary},
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.xs,
+  },
+  dot: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+  },
+  dotFilled: {
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+  },
+  dotEmpty: {
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  streakCountRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    marginBottom: Spacing.xs,
+  },
+  streakVisits: {fontSize: 38, fontWeight: '800', color: Colors.primary, letterSpacing: -1},
+  streakSep: {fontSize: 28, fontWeight: '300', color: colors.textMuted},
+  streakGoalNum: {fontSize: 38, fontWeight: '800', color: colors.textSecondary, letterSpacing: -1},
+  streakCountLabel: {...Typography.body, color: colors.textMuted, marginLeft: 4},
+
+  // ── Stats row ──
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     marginBottom: Spacing.xl,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
   },
   statCard: {
     flex: 1,
@@ -273,6 +410,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     ...Typography.h4,
     color: colors.textPrimary,
     marginBottom: 2,
+    fontWeight: '700',
   },
   statLabel: {
     ...Typography.caption,
@@ -281,6 +419,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+
   sectionTitle: {
     ...Typography.label,
     color: colors.textMuted,
@@ -288,139 +427,56 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     letterSpacing: 1.2,
     marginBottom: Spacing.md,
   },
-  // Nav cards
+
+  // ── Nav cards ──
   navCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     gap: Spacing.md,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
   },
-  navCardHighlight: {borderColor: colors.borderLight},
+  navHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 20,
+    right: 20,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 1,
+  },
   navIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.md,
+    width: 50,
+    height: 50,
+    borderRadius: Radius.lg,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  navEmoji: {fontSize: 24},
   navContent: {flex: 1},
-  navTitle: {...Typography.h4, color: colors.textPrimary, marginBottom: 3},
+  navTitle: {...Typography.h4, color: colors.textPrimary, marginBottom: 3, fontWeight: '600'},
   navSubtitle: {
     ...Typography.bodySmall,
     color: colors.textMuted,
     lineHeight: 18,
   },
-  navChevron: {fontSize: 22, color: colors.textMuted},
-  urgentBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  urgentText: {color: Colors.white, fontWeight: '700', fontSize: 14},
-  // Streak card
-  streakCard: {
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  streakHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-  },
-  streakSectionLabel: {
-    ...Typography.label,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
-  streakBadge: {
-    backgroundColor: 'rgba(255,107,53,0.15)',
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: Colors.primary + '44',
-  },
-  streakBadgeDim: {
-    backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
-  },
-  streakBadgeText: {fontSize: 13, fontWeight: '700', color: colors.textPrimary},
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.xs,
-  },
-  dot: {
+  navChevronWrap: {
     width: 28,
     height: 28,
     borderRadius: 14,
-  },
-  dotFilled: {
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.5,
-    shadowRadius: 6,
-  },
-  dotEmpty: {
     backgroundColor: colors.surfaceElevated,
-    borderWidth: 2,
-    borderColor: colors.borderLight,
-  },
-  streakCountRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
-  },
-  streakVisits: {fontSize: 36, fontWeight: '800', color: Colors.primary},
-  streakSep: {fontSize: 28, fontWeight: '300', color: colors.textMuted},
-  streakGoalNum: {fontSize: 36, fontWeight: '800', color: colors.textSecondary},
-  streakCountLabel: {...Typography.body, color: colors.textMuted, marginLeft: 4},
-  goalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  goalLabel: {...Typography.body, color: colors.textSecondary},
-  goalStepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  stepperBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  stepperBtnDisabled: {opacity: 0.3},
-  stepperBtnText: {fontSize: 18, fontWeight: '700', color: colors.textPrimary, lineHeight: 22},
-  stepperValue: {...Typography.h4, color: colors.textPrimary, minWidth: 64, textAlign: 'center'},
 });
 
 export default DashboardScreen;
+

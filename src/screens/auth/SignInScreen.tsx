@@ -20,6 +20,7 @@ import PrimaryButton from '../../components/common/PrimaryButton';
 import {GoogleLogo} from '../../components/common/SocialButton';
 import SocialButton from '../../components/common/SocialButton';
 import {useAuth} from '../../context/AuthContext';
+import GlassBackground from '../../components/common/GlassBackground';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'SignIn'>;
@@ -32,7 +33,7 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
-  const {colors, barStyle} = useTheme();
+  const {colors, isDark, barStyle} = useTheme();
   const styles = makeStyles(colors);
 
   const {signIn, signInWithGoogle, signInWithApple} = useAuth();
@@ -91,7 +92,8 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
+      <GlassBackground isDark={isDark} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}>
@@ -212,11 +214,15 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     textAlign: 'center',
   },
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: Spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 16,
   },
   forgotRow: {
     alignSelf: 'flex-end',
@@ -253,11 +259,11 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 54,
-    borderRadius: Radius.md,
-    backgroundColor: colors.surfaceElevated,
+    height: 56,
+    borderRadius: Radius.xl,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     gap: Spacing.sm,
   },
   googleButtonText: {

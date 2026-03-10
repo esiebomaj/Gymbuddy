@@ -62,7 +62,7 @@ const TabIcon: React.FC<TabIconProps> = ({icon, label, focused, badge}) => {
 
 const MainTabNavigator: React.FC = () => {
   const {status} = useLock();
-  const {colors} = useTheme();
+  const {colors, isDark} = useTheme();
   const isLocked = status === 'locked';
 
   return (
@@ -71,14 +71,17 @@ const MainTabNavigator: React.FC = () => {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
+          backgroundColor: isDark ? 'rgba(10,10,22,0.96)' : 'rgba(248,248,252,0.94)',
+          borderTopColor: colors.glassBorder,
+          borderTopWidth: 0.5,
           height: Platform.OS === 'ios' ? 80 : 64,
           paddingBottom: Platform.OS === 'ios' ? 20 : 8,
           paddingTop: 4,
           elevation: 0,
-          shadowOpacity: 0,
+          shadowColor: '#000',
+          shadowOffset: {width: 0, height: -4},
+          shadowOpacity: isDark ? 0.35 : 0.08,
+          shadowRadius: 16,
         },
       }}>
 

@@ -15,6 +15,7 @@ import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
 import {useTheme} from '../../context/ThemeContext';
 import {useLock} from '../../context/LockContext';
 import PrimaryButton from '../../components/common/PrimaryButton';
+import GlassBackground from '../../components/common/GlassBackground';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -132,7 +133,8 @@ const ProofSubmissionScreen: React.FC = () => {
   // ── Main form ──
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
+      <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
+      <GlassBackground isDark={isDark} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -241,15 +243,15 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   // Header
   header: {paddingTop: Spacing.lg, paddingBottom: Spacing.xl},
-  title: {...Typography.h2, color: colors.textPrimary, marginBottom: Spacing.xs},
+  title: {...Typography.h2, color: colors.textPrimary, marginBottom: Spacing.xs, letterSpacing: -0.5},
   subtitle: {...Typography.body, color: colors.textSecondary, lineHeight: 22},
 
   // Warning
   warningCard: {
-    backgroundColor: 'rgba(255,107,53,0.1)',
-    borderRadius: Radius.md,
+    backgroundColor: 'rgba(255,107,53,0.10)',
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.primary + '55',
+    borderColor: `${Colors.primary}44`,
     padding: Spacing.md,
     marginBottom: Spacing.lg,
   },
@@ -257,12 +259,17 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   // Step card
   stepCard: {
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: Spacing.md,
     marginBottom: Spacing.md,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
   },
   stepHeader: {
     flexDirection: 'row',
@@ -274,18 +281,22 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     justifyContent: 'center',
     alignItems: 'center',
   },
   stepBadgeDone: {
     backgroundColor: Colors.success,
     borderColor: Colors.success,
+    shadowColor: Colors.success,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.45,
+    shadowRadius: 6,
   },
   stepBadgeText: {color: colors.textPrimary, fontSize: 12, fontWeight: '700'},
-  stepTitle: {...Typography.h4, color: colors.textPrimary, flex: 1},
+  stepTitle: {...Typography.h4, color: colors.textPrimary, flex: 1, fontWeight: '600'},
   stepRequired: {
     ...Typography.caption,
     color: Colors.error,
@@ -312,14 +323,18 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.full,
-    borderWidth: 1.5,
-    borderColor: colors.borderLight,
-    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.glass,
     gap: 6,
   },
   pillSelected: {
     borderColor: Colors.primary,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: 'rgba(255,107,53,0.15)',
+    shadowColor: Colors.primary,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.30,
+    shadowRadius: 6,
   },
   pillIcon: {fontSize: 16},
   pillLabel: {...Typography.bodySmall, color: colors.textSecondary, fontWeight: '500'},
@@ -328,22 +343,22 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   // Photo box
   photoBox: {
     height: 200,
-    borderRadius: Radius.md,
-    borderWidth: 2,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: colors.borderLight,
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: colors.glass,
     gap: Spacing.xs,
   },
   photoBoxDone: {
     borderStyle: 'solid',
     borderColor: Colors.success,
-    backgroundColor: 'rgba(34,224,154,0.06)',
+    backgroundColor: 'rgba(48,209,88,0.08)',
   },
   photoCameraIcon: {fontSize: 40, marginBottom: Spacing.xs},
-  photoBoxText: {...Typography.h4, color: colors.textSecondary},
+  photoBoxText: {...Typography.h4, color: colors.textSecondary, fontWeight: '600'},
   photoBoxSubtext: {
     ...Typography.bodySmall,
     color: colors.textMuted,
@@ -353,7 +368,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   photoPreviewWrapper: {
     width: '100%',
     height: '100%',
-    borderRadius: Radius.md - 1,
+    borderRadius: Radius.lg - 2,
     overflow: 'hidden',
   },
   photoPreview: {width: '100%', height: '100%', resizeMode: 'cover'},
@@ -390,6 +405,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
+    letterSpacing: -1,
   },
   successDesc: {
     ...Typography.body,
@@ -399,15 +415,19 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   nextLockCard: {
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: Spacing.lg,
     width: '100%',
     alignItems: 'center',
     marginBottom: Spacing.xl,
     gap: Spacing.xs,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
   },
   nextLockLabel: {
     ...Typography.label,
@@ -415,7 +435,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
-  nextLockTime: {...Typography.h3, color: Colors.primary},
+  nextLockTime: {...Typography.h3, color: Colors.primary, fontWeight: '700'},
   logAnotherBtn: {paddingVertical: Spacing.sm},
   logAnotherText: {...Typography.body, color: colors.textMuted},
 });
