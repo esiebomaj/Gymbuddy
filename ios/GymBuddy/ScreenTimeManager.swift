@@ -13,17 +13,49 @@ import SwiftUI
 @objc(ScreenTimeManager)
 class ScreenTimeManager: NSObject {
 
-  // ManagedSettings uses a "store" to apply restrictions.
-  // The default .main store is per-app and doesn't need App Groups.
+  private static let kSelectedApps = "STM_selectedApps"
+  private static let kCurrentSelection = "STM_currentSelection"
+
   private let store = ManagedSettingsStore()
 
-  // Holds the set of application tokens the user picked via FamilyActivityPicker.
-  // Tokens are opaque — they don't expose bundle IDs, only the system can resolve them.
-  static var selectedApps: Set<ApplicationToken> = []
+  // In-memory cache, kept in sync with UserDefaults via save/restore.
+  static var selectedApps: Set<ApplicationToken> = [] {
+    didSet { Self.persistSelectedApps() }
+  }
 
-  // Stores the full FamilyActivitySelection so we can pre-populate the picker
-  // on subsequent opens, letting the user add more apps to an existing lock.
-  static var currentSelection = FamilyActivitySelection()
+  static var currentSelection = FamilyActivitySelection() {
+    didSet { Self.persistCurrentSelection() }
+  }
+
+  override init() {
+    super.init()
+    Self.restorePersistedState()
+  }
+
+  // MARK: - Persistence helpers
+
+  private static func persistSelectedApps() {
+    guard let data = try? JSONEncoder().encode(selectedApps) else { return }
+    UserDefaults.standard.set(data, forKey: kSelectedApps)
+  }
+
+  private static func persistCurrentSelection() {
+    guard let data = try? JSONEncoder().encode(currentSelection) else { return }
+    UserDefaults.standard.set(data, forKey: kCurrentSelection)
+  }
+
+  private static func restorePersistedState() {
+    if let data = UserDefaults.standard.data(forKey: kSelectedApps),
+       let apps = try? JSONDecoder().decode(Set<ApplicationToken>.self, from: data),
+       !apps.isEmpty {
+      // Bypass didSet to avoid a redundant write back
+      selectedApps = apps
+    }
+    if let data = UserDefaults.standard.data(forKey: kCurrentSelection),
+       let sel = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) {
+      currentSelection = sel
+    }
+  }
 
   // MARK: - 1. Authorization
   // Requests the user (or guardian, for child accounts) to authorize this app
@@ -52,6 +84,52 @@ class ScreenTimeManager: NSObject {
     } else {
       reject("UNSUPPORTED", "Screen Time app locking requires iOS 16 or later.", nil)
     }
+  }
+
+  // MARK: - 1b. Check existing authorization
+  @objc
+  func checkAuthorizationStatus(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    if #available(iOS 16.0, *) {
+      let status = AuthorizationCenter.shared.authorizationStatus
+      switch status {
+      case .approved:
+        resolve("approved")
+      case .denied:
+        resolve("denied")
+      case .notDetermined:
+        resolve("notDetermined")
+      @unknown default:
+        resolve("notDetermined")
+      }
+    } else {
+      reject("UNSUPPORTED", "Screen Time requires iOS 16 or later.", nil)
+    }
+  }
+
+  // MARK: - 1c. Check how many apps are currently shielded
+  // ManagedSettingsStore persists across app launches, so we can read it back.
+  @objc
+  func getShieldedAppCount(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    let count = store.shield.applications?.count ?? 0
+    if count > 0, let tokens = store.shield.applications {
+      ScreenTimeManager.selectedApps = tokens
+    }
+    resolve(count)
+  }
+
+  // MARK: - 1d. Return count of persisted app selection (survives unlock + relaunch)
+  @objc
+  func getSelectedAppCount(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    resolve(ScreenTimeManager.selectedApps.count)
   }
 
   // MARK: - 2. Present the FamilyActivityPicker

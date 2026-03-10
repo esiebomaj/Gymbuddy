@@ -30,18 +30,24 @@ const DAYS = [
   {label: 'Su', value: 0},
 ];
 
-const HOURS = Array.from({length: 24}, (_, i) => {
-  const h = i; // 12AM – 11PM (full 24h)
-  const suffix = h < 12 ? 'AM' : 'PM';
-  const display = h === 0 ? 12 : h === 12 ? 12 : h > 12 ? h - 12 : h;
-  return {label: `${display}${suffix}`, value: `${String(h).padStart(2, '0')}:00`};
+const START_HOURS = Array.from({length: 24}, (_, i) => {
+  const suffix = i < 12 ? 'AM' : 'PM';
+  const display = i === 0 ? 12 : i === 12 ? 12 : i > 12 ? i - 12 : i;
+  return {label: `${display}:00 ${suffix}`, value: `${String(i).padStart(2, '0')}:00`};
+});
+
+const END_HOURS = Array.from({length: 24}, (_, i) => {
+  const suffix = i < 12 ? 'AM' : 'PM';
+  const display = i === 0 ? 12 : i === 12 ? 12 : i > 12 ? i - 12 : i;
+  return {label: `${display}:59 ${suffix}`, value: `${String(i).padStart(2, '0')}:59`};
 });
 
 const formatTime = (val: string) => {
   const h = parseInt(val.split(':')[0], 10);
+  const m = val.split(':')[1];
   const suffix = h < 12 ? 'AM' : 'PM';
   const disp = h === 12 ? 12 : h > 12 ? h - 12 : h === 0 ? 12 : h;
-  return `${disp}:00 ${suffix}`;
+  return `${disp}:${m} ${suffix}`;
 };
 
 // ── Row components ────────────────────────────────────────────────────────────
@@ -103,11 +109,10 @@ const SettingsScreen: React.FC = () => {
   const [scheduleVisible, setScheduleVisible] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>(settings.gym_days ?? [1,2,3,4,5]);
   const [startTime, setStartTime] = useState(settings.lock_start_time ?? '06:00');
-  const [endTime, setEndTime] = useState(settings.lock_end_time ?? '22:00');
+  const [endTime, setEndTime] = useState(settings.lock_end_time ?? '23:59');
   const [saving, setSaving] = useState(false);
 
   const openSchedule = () => {
-    // Seed with current saved settings each time the modal opens
     setSelectedDays(settings.gym_days ?? [1,2,3,4,5]);
     setStartTime(settings.lock_start_time ?? '06:00');
     setEndTime(settings.lock_end_time ?? '22:00');
@@ -320,7 +325,7 @@ const SettingsScreen: React.FC = () => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.timeScroll}>
-                {HOURS.map(h => {
+                {START_HOURS.map(h => {
                   const active = startTime === h.value;
                   return (
                     <TouchableOpacity
@@ -329,7 +334,7 @@ const SettingsScreen: React.FC = () => {
                       onPress={() => setStartTime(h.value)}
                       activeOpacity={0.75}>
                       <Text style={[styles.timePillText, active && styles.timePillTextActive]}>
-                        {h.label}
+                        {h.value}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -347,7 +352,7 @@ const SettingsScreen: React.FC = () => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.timeScroll}>
-                {HOURS.map(h => {
+                {END_HOURS.map(h => {
                   const active = endTime === h.value;
                   return (
                     <TouchableOpacity

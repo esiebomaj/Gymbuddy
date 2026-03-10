@@ -49,7 +49,7 @@ const AppSelectionScreen: React.FC = () => {
           </TouchableOpacity>
           <Text style={styles.title}>App Selection</Text>
           <Text style={styles.subtitle}>
-            Select apps to restrict — they lock immediately and stay locked until you hit the gym
+            Choose which apps to restrict on gym days until you've worked out
           </Text>
         </View>
 
@@ -86,8 +86,10 @@ const AppSelectionScreen: React.FC = () => {
                 </Text>
                 <Text style={styles.countSubtitle}>
                   {hasApps
-                    ? 'These apps are locked — submit gym proof to unlock'
-                    : 'Tap the button below to pick apps to lock'}
+                    ? isLocked
+                      ? 'Currently locked — hit the gym to unlock'
+                      : 'Will lock on your next scheduled gym day'
+                    : 'Tap below to choose apps to restrict'}
                 </Text>
               </View>
             </View>
@@ -108,7 +110,7 @@ const AppSelectionScreen: React.FC = () => {
                       {hasApps ? 'Change App Selection' : 'Select Apps to Lock'}
                     </Text>
                     <Text style={styles.pickerSubtitle}>
-                      {isLocked ? 'Add or change locked apps — lock stays active' : 'Apps lock immediately after selection'}
+                      {isLocked ? 'Add or change locked apps — lock stays active' : 'Add apps to be locked'}
                     </Text>
                   </View>
                   <ChevronRight size={20} color={Colors.primary} strokeWidth={2} />

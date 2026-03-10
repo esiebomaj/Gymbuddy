@@ -34,7 +34,7 @@ const getStatusConfig = (colors: AppColors, isDark: boolean) => ({
     border: colors.border,
     description: 'Authorize Screen Time to get started',
   },
-  idle: {
+  noAppsSelected: {
     emoji: '⚙️',
     label: 'Not Set Up',
     color: colors.textSecondary,
@@ -62,10 +62,28 @@ const getStatusConfig = (colors: AppColors, isDark: boolean) => ({
 
 const DashboardScreen: React.FC<Props> = ({navigation}) => {
   const {user} = useAuth();
-  const {status, selectedAppCount, elapsedSeconds, stats, refreshStats} = useLock();
+  const {
+    status, 
+    selectedAppCount, 
+    elapsedSeconds, 
+    stats, 
+    refreshStats, 
+    refreshSettings, 
+    screenTimeAuthorized
+  } = useLock();
   const {colors, isDark, barStyle} = useTheme();
   const styles = makeStyles(colors);
-  const cfg = getStatusConfig(colors, isDark)[status];
+
+  const finalStatus = !screenTimeAuthorized ? 'unauthorized' : selectedAppCount <= 0 ? 'noAppsSelected' : status;
+
+  const cfg = getStatusConfig(colors, isDark)[finalStatus];
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshStats();
+      refreshSettings();
+    }, [refreshStats, refreshSettings]),
+  );
 
   const formatElapsed = (secs: number) => {
     const h = Math.floor(secs / 3600);

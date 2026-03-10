@@ -23,13 +23,13 @@ import type {
 
 const {ScreenTimeManager} = NativeModules;
 
-export type LockStatus = 'unauthorized' | 'idle' | 'locked' | 'unlocked';
+export type LockStatus = 'locked' | 'unlocked';
 
 const DEFAULT_SETTINGS: SettingsResponse = {
   weekly_goal: 3,
   gym_days: [1, 2, 3, 4, 5],
   lock_start_time: '06:00',
-  lock_end_time: '22:00',
+  lock_end_time: '23:59',
 };
 
 const DEFAULT_STATS: StatsResponse = {
@@ -49,15 +49,35 @@ export interface LockContextType {
   elapsedSeconds: number;
   screenTimeAuthorized: boolean;
   isLoading: boolean;
+  isHydrated: boolean;
   settings: SettingsResponse;
   stats: StatsResponse;
   updateSettings: (patch: SettingsUpdate) => Promise<void>;
   requestAuthorization: () => Promise<void>;
   selectApps: () => Promise<void>;
-  lockApps: () => Promise<void>;
-  unlockApps: () => Promise<void>;
   submitProof: (workoutType: string, note?: string, photoUri?: string) => Promise<void>;
   refreshStats: () => Promise<void>;
+  refreshSettings: () => Promise<void>;
+}
+
+function shouldLockApps(
+  settings: SettingsResponse,
+  visitedToday: boolean,
+): boolean {
+
+  if (visitedToday) {return false;}
+
+  const now = new Date();
+  const currentDay = now.getDay(); // 0=Sun, 1=Mon, …, 6=Sat
+  if (!settings.gym_days.includes(currentDay)) {return false;}
+
+  const [startH, startM] = settings.lock_start_time.split(':').map(Number);
+  const [endH, endM] = settings.lock_end_time.split(':').map(Number);
+  const current = now.getHours() * 60 + now.getMinutes();
+  const start = startH * 60 + startM;
+  const end = endH * 60 + endM;
+
+  return current >= start && current <= end;
 }
 
 const LockContext = createContext<LockContextType | undefined>(undefined);
@@ -74,25 +94,51 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
   const {session} = useAuth();
   const token = session?.access_token;
 
-  const [status, setStatus] = useState<LockStatus>('unauthorized');
+  const [status, setStatus] = useState<LockStatus>('unlocked');
   const [selectedAppCount, setSelectedAppCount] = useState(0);
   const [lockedAt, setLockedAt] = useState<Date | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [screenTimeAuthorized, setScreenTimeAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [settings, setSettings] = useState<SettingsResponse>(DEFAULT_SETTINGS);
   const [stats, setStats] = useState<StatsResponse>(DEFAULT_STATS);
 
-  // ── Hydrate from backend on session change ─────────────────────────────────
+  // ── Check Screen Time authorization on mount ─────────────────────────────
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await ScreenTimeManager.checkAuthorizationStatus();
+        if (result === 'approved') {
+          setScreenTimeAuthorized(true);
+          // Restore persisted app selection count so lockApps() works without re-picking.
+          // Prefer the shielded count (actively locked) over the saved selection.
+          const shieldedCount: number = await ScreenTimeManager.getShieldedAppCount();
+          if (shieldedCount > 0) {
+            setSelectedAppCount(shieldedCount);
+            setStatus('locked');
+          } else {
+            const selectedCount: number = await ScreenTimeManager.getSelectedAppCount();
+            setSelectedAppCount(selectedCount);
+          }
+          // Actual lock/unlock is handled by the scheduling effect once hydrated.
+        }
+      } catch {
+        // iOS < 16 or module unavailable — leave as unauthorized
+      }
+    })();
+  }, []);
+
+  // Fetch data from backend
   useEffect(() => {
     if (!token) {return;}
 
     let cancelled = false;
 
-    const hydrate = async () => {
+    (async () => {
       try {
         const [s, st] = await Promise.all([
           fetchSettings(token),
@@ -101,14 +147,59 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
         if (cancelled) {return;}
         setSettings(s);
         setStats(st);
-      } catch {
-        // Silently fail — settings may not exist yet during onboarding
+      } catch (e) {
+        console.warn('LockContext hydration failed:', e);
+      } finally {
+        if (!cancelled) {setIsHydrated(true);}
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [token]);
+
+  // ── Auto-lock / unlock based on schedule ────────────────────────────────────
+
+  useEffect(() => {
+    if (!isHydrated || !screenTimeAuthorized || selectedAppCount === 0) {return;}
+
+    const evaluate = async () => {
+      const shouldLock = shouldLockApps(settings, stats.visited_today);
+      try {
+        const shieldedCount: number =
+        await ScreenTimeManager.getShieldedAppCount();
+        const isCurrentlyLocked = shieldedCount > 0;
+
+        if (shouldLock && !isCurrentlyLocked) {
+          await ScreenTimeManager.lockApps();
+          setStatus('locked');
+          setLockedAt(new Date());
+        } else if (!shouldLock && isCurrentlyLocked) {
+          await ScreenTimeManager.unlockApps();
+          setStatus('unlocked');
+          setLockedAt(null);
+        } else if (isCurrentlyLocked) {
+          setStatus('locked');
+          setLockedAt(prev => prev ?? new Date());
+        }
+        // If not locked and shouldn't be, leave status as 'unlocked'
+      } catch (e) {
+        console.warn('Lock schedule evaluation failed:', e);
       }
     };
 
-    hydrate();
-    return () => { cancelled = true; };
-  }, [token]);
+    evaluate();
+    const interval = setInterval(evaluate, 60_000);
+    return () => clearInterval(interval);
+  }, [
+    isHydrated, 
+    screenTimeAuthorized, 
+    selectedAppCount, 
+    settings, 
+    settings.gym_days,
+    settings.lock_start_time,
+    settings.lock_end_time,
+    stats.visited_today,
+  ]);
 
   // ── Tick elapsed time while locked ─────────────────────────────────────────
 
@@ -142,6 +233,15 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
     }
   }, [token]);
 
+  const refreshSettings = useCallback(async () => {
+    if (!token) {return;}
+    try {
+      setSettings(await fetchSettings(token));
+    } catch {
+      // Non-critical — settings will show cached data
+    }
+  }, [token]);
+
   // ── Settings mutation (optimistic update + persist) ────────────────────────
 
   const updateSettings = useCallback(async (patch: SettingsUpdate) => {
@@ -164,7 +264,6 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
     try {
       await ScreenTimeManager.requestAuthorization();
       setScreenTimeAuthorized(true);
-      setStatus('idle');
     } catch (e: any) {
       if (e?.code === 'ENTITLEMENT_MISSING') {
         Alert.alert(
@@ -188,50 +287,16 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
       const count = await ScreenTimeManager.showAppPicker();
       if (count > 0) {
         setSelectedAppCount(count);
-        await ScreenTimeManager.lockApps();
-        if (status !== 'locked') {
-          setStatus('locked');
-          setLockedAt(new Date());
+        if (status === 'locked') {
+          await ScreenTimeManager.lockApps();
         }
-        // If already locked, keep the existing lock timestamp — just update the selection
       }
-      // If count === 0 and already locked, ignore the result to prevent bypassing the lock
     } catch (e: any) {
       Alert.alert('App Picker Error', e.message);
     } finally {
       setIsLoading(false);
     }
   }, [status]);
-
-  const lockApps = useCallback(async () => {
-    if (selectedAppCount === 0) {
-      Alert.alert('No Apps Selected', 'Please select apps to lock first.');
-      return;
-    }
-    setIsLoading(true);
-    try {
-      await ScreenTimeManager.lockApps();
-      setStatus('locked');
-      setLockedAt(new Date());
-    } catch (e: any) {
-      Alert.alert('Lock Error', e.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedAppCount]);
-
-  const unlockApps = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await ScreenTimeManager.unlockApps();
-      setStatus('unlocked');
-      setLockedAt(null);
-    } catch (e: any) {
-      Alert.alert('Unlock Error', e.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   // ── Submit proof (API + unlock + refresh) ──────────────────────────────────
 
@@ -276,15 +341,15 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
         elapsedSeconds,
         screenTimeAuthorized,
         isLoading,
+        isHydrated,
         settings,
         stats,
         updateSettings,
         requestAuthorization,
         selectApps,
-        lockApps,
-        unlockApps,
         submitProof,
         refreshStats,
+        refreshSettings,
       }}>
       {children}
     </LockContext.Provider>

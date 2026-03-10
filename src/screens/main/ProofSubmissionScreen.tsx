@@ -30,18 +30,16 @@ const WORKOUT_TYPES = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const ProofSubmissionScreen: React.FC = () => {
-  const {status, isLoading, submitProof, settings} = useLock();
+  const {status, isLoading, submitProof, settings, stats} = useLock();
   const {colors, isDark, barStyle} = useTheme();
   const styles = makeStyles(colors);
 
   const [photoTaken, setPhotoTaken] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | undefined>();
   const [selectedWorkout, setSelectedWorkout] = useState<string>('other');
-  const [submitted, setSubmitted] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [submitted, setSubmitted] = useState<boolean | null>(null);
 
   const isLocked = status === 'locked';
-  const isUnlocked = status === 'unlocked';
 
   // Format the next lock time from settings for display
   const nextLockTime = (() => {
@@ -85,7 +83,6 @@ const ProofSubmissionScreen: React.FC = () => {
     try {
       await submitProof(selectedWorkout, undefined, photoUri);
       setSubmitted(true);
-      setShowForm(false);
     } catch {
       // submitProof already shows the error alert — clear the photo so user retakes
       setPhotoTaken(false);
@@ -98,11 +95,10 @@ const ProofSubmissionScreen: React.FC = () => {
     setPhotoUri(undefined);
     setSelectedWorkout('other');
     setSubmitted(false);
-    setShowForm(true);
   };
 
-  // ── Unlocked confirmation (shown when already unlocked today, or just submitted) ──
-  if ((isUnlocked || submitted) && !showForm) {
+  // ── Unlocked confirmation (shown when already visited today) ──
+  if (submitted ?? stats.visited_today) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <StatusBar barStyle={barStyle} backgroundColor={colors.background} />
@@ -118,12 +114,13 @@ const ProofSubmissionScreen: React.FC = () => {
             <Text style={styles.nextLockTime}>Tomorrow · {nextLockTime}</Text>
           </View>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.logAnotherBtn}
             onPress={handleLogAnother}
             activeOpacity={0.7}>
             <Text style={styles.logAnotherText}>Log another workout →</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
+
         </View>
       </SafeAreaView>
     );
