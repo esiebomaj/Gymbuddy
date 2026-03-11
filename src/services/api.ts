@@ -42,12 +42,14 @@ export interface VisitResponse {
 
 export interface StatsResponse {
   weekly_visits: number;
+  matching_weekly_visits: number;
   weekly_goal: number;
   current_streak: number;
   longest_streak: number;
   total_visits: number;
   visited_today: boolean;
   visit_dates_this_week: string[];
+  matching_visit_dates_this_week: string[];
 }
 
 // ── API error ────────────────────────────────────────────────────────────────

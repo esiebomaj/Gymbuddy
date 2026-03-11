@@ -37,7 +37,7 @@ const ProofSubmissionScreen: React.FC = () => {
 
   const [photoTaken, setPhotoTaken] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | undefined>();
-  const [selectedWorkout, setSelectedWorkout] = useState<string>('other');
+  const [selectedWorkout, setSelectedWorkout] = useState<string>('weights');
   const [submitted, setSubmitted] = useState<boolean | null>(null);
 
   const isLocked = status === 'locked';

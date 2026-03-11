@@ -83,13 +83,7 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
 
   const cfg = getStatusConfig(colors, isDark)[finalStatus];
 
-  useFocusEffect(
-    useCallback(() => {
-      refreshStats();
-      refreshSettings();
-    }, [refreshStats, refreshSettings]),
-  );
-
+  useFocusEffect( useCallback(() => { refreshSettings(); }, [refreshSettings]));
   useFocusEffect(useCallback(() => { refreshStats(); }, [refreshStats]));
 
   const formatElapsed = (secs: number) => {
@@ -161,14 +155,14 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
             {Array.from({length: stats.weekly_goal}).map((_, i) => (
               <View
                 key={i}
-                style={[styles.dot, i < stats.weekly_visits ? styles.dotFilled : styles.dotEmpty]}
+                style={[styles.dot, i < stats.matching_weekly_visits ? styles.dotFilled : styles.dotEmpty]}
               />
             ))}
           </View>
 
           {/* Count */}
           <View style={styles.streakCountRow}>
-            <Text style={styles.streakVisits}>{stats.weekly_visits}</Text>
+            <Text style={styles.streakVisits}>{stats.matching_weekly_visits}</Text>
             <Text style={styles.streakSep}> / </Text>
             <Text style={styles.streakGoalNum}>{stats.weekly_goal}</Text>
             <Text style={styles.streakCountLabel}> visits this week</Text>

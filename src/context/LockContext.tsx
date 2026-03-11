@@ -20,6 +20,7 @@ import type {
   SettingsResponse,
   SettingsUpdate,
 } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const {ScreenTimeManager} = NativeModules;
 
@@ -34,12 +35,14 @@ const DEFAULT_SETTINGS: SettingsResponse = {
 
 const DEFAULT_STATS: StatsResponse = {
   weekly_visits: 0,
+  matching_weekly_visits: 0,
   weekly_goal: 3,
   current_streak: 0,
   longest_streak: 0,
   total_visits: 0,
   visited_today: false,
   visit_dates_this_week: [],
+  matching_visit_dates_this_week: [],
 };
 
 export interface LockContextType {
@@ -91,8 +94,9 @@ export const useLock = (): LockContextType => {
 export const LockProvider: React.FC<{children: React.ReactNode}> = ({
   children,
 }) => {
-  const {session} = useAuth();
+  const {session, user} = useAuth();
   const token = session?.access_token;
+  const userId = user?.id ?? null;
 
   const [status, setStatus] = useState<LockStatus>('unlocked');
   const [selectedAppCount, setSelectedAppCount] = useState(0);
@@ -102,6 +106,7 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lockedAtRestoredForUserId = useRef<string | null>(null);
 
   const [settings, setSettings] = useState<SettingsResponse>(DEFAULT_SETTINGS);
   const [stats, setStats] = useState<StatsResponse>(DEFAULT_STATS);
@@ -201,7 +206,46 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
     stats.visited_today,
   ]);
 
-  // ── Tick elapsed time while locked ─────────────────────────────────────────
+  // Persist lockedAt per user: restore once per user, then sync on change
+  useEffect(() => {
+    if (userId == null) {
+      lockedAtRestoredForUserId.current = null;
+      return;
+    }
+
+    const storageKey = `lockedAt_${userId}`;
+
+    if (lockedAtRestoredForUserId.current !== userId) {
+      lockedAtRestoredForUserId.current = userId;
+      setLockedAt(null);
+      AsyncStorage.getItem(storageKey)
+        .then((stored) => {
+          if (stored) {
+            const parsed = new Date(stored);
+            if (!Number.isNaN(parsed.getTime())) setLockedAt(parsed);
+          }
+        })
+        .catch(() => {});
+      return;
+    }
+
+
+
+    const persist = async () => {
+      try {
+        if (lockedAt) {
+          await AsyncStorage.setItem(storageKey, lockedAt.toISOString());
+        } else {
+          await AsyncStorage.removeItem(storageKey);
+        }
+      } catch {
+        // Non-critical; lock state still correct in memory
+      }
+    };
+    persist();
+  }, [userId, lockedAt]);
+
+  // Tick elapsed time while locked 
 
   useEffect(() => {
     if (status === 'locked' && lockedAt) {
