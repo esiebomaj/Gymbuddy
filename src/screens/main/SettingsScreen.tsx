@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Switch,
 } from 'react-native';
-import GlassBackground from '../../components/common/GlassBackground';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Target, Flame, Dumbbell, LogOut, CalendarDays, Clock, X, Check, Moon} from 'lucide-react-native';
 import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
@@ -168,7 +167,6 @@ const SettingsScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
-      <GlassBackground isDark={isDark} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>

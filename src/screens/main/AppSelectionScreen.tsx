@@ -15,7 +15,6 @@ import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
 import {useTheme} from '../../context/ThemeContext';
 import {useLock} from '../../context/LockContext';
 import PrimaryButton from '../../components/common/PrimaryButton';
-import GlassBackground from '../../components/common/GlassBackground';
 
 const AppSelectionScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -36,7 +35,6 @@ const AppSelectionScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
-      <GlassBackground isDark={isDark} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>

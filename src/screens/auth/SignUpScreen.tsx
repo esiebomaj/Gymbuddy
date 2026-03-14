@@ -20,7 +20,6 @@ import PrimaryButton from '../../components/common/PrimaryButton';
 import {GoogleLogo} from '../../components/common/SocialButton';
 import SocialButton from '../../components/common/SocialButton';
 import {useAuth} from '../../context/AuthContext';
-import GlassBackground from '../../components/common/GlassBackground';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'SignUp'>;
@@ -152,7 +151,6 @@ const SignUpScreen: React.FC<Props> = ({navigation}) => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
-      <GlassBackground isDark={isDark} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}>

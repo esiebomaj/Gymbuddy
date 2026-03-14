@@ -24,7 +24,6 @@ import {
 } from 'lucide-react-native';
 import {Colors, Radius, type AppColors} from '../../theme';
 import {useTheme} from '../../context/ThemeContext';
-import GlassBackground from '../../components/common/GlassBackground';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 export const INTRO_SEEN_KEY = '@gymbuddy_intro_seen';
@@ -277,8 +276,6 @@ const IntroScreen: React.FC<Props> = ({onDone}) => {
         backgroundColor="transparent"
         translucent
       />
-      <GlassBackground isDark={isDark} />
-
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         {/* Skip */}
         <View style={styles.topRow}>

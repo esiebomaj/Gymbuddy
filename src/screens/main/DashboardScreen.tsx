@@ -17,7 +17,6 @@ import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
 import {useTheme} from '../../context/ThemeContext';
 import {useAuth} from '../../context/AuthContext';
 import {useLock} from '../../context/LockContext';
-import GlassBackground from '../../components/common/GlassBackground';
 
 type Props = {
   navigation: CompositeNavigationProp<
@@ -98,9 +97,6 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle={barStyle} backgroundColor="transparent" translucent />
-      {/* Ambient background blobs */}
-      <GlassBackground isDark={isDark} />
-
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
