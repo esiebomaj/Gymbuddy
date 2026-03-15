@@ -24,13 +24,13 @@ import {
 } from 'lucide-react-native';
 
 const DAYS = [
+  {label: 'Su', full: 'Sunday', value: 0},
   {label: 'Mo', full: 'Monday', value: 1},
   {label: 'Tu', full: 'Tuesday', value: 2},
   {label: 'We', full: 'Wednesday', value: 3},
   {label: 'Th', full: 'Thursday', value: 4},
   {label: 'Fr', full: 'Friday', value: 5},
   {label: 'Sa', full: 'Saturday', value: 6},
-  {label: 'Su', full: 'Sunday', value: 0},
 ];
 
 const HOURS = Array.from({length: 24}, (_, i) => {

@@ -21,13 +21,13 @@ import {useLock} from '../../context/LockContext';
 // ── Constants (mirrors OnboardingScreen) ──────────────────────────────────────
 
 const DAYS = [
+  {label: 'Su', value: 0},
   {label: 'Mo', value: 1},
   {label: 'Tu', value: 2},
   {label: 'We', value: 3},
   {label: 'Th', value: 4},
   {label: 'Fr', value: 5},
   {label: 'Sa', value: 6},
-  {label: 'Su', value: 0},
 ];
 
 const START_HOURS = Array.from({length: 24}, (_, i) => {
