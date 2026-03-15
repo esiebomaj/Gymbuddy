@@ -20,6 +20,7 @@ import PrimaryButton from '../../components/common/PrimaryButton';
 import {GoogleLogo} from '../../components/common/SocialButton';
 import SocialButton from '../../components/common/SocialButton';
 import {useAuth} from '../../context/AuthContext';
+import {isAppleSignInAvailable} from '../../services/appleAuth';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'SignIn'>;
@@ -162,11 +163,13 @@ const SignInScreen: React.FC<Props> = ({navigation}) => {
               onPress={handleGoogleSignIn}
               loading={socialLoading === 'google'}
             />
-            <SocialButton
-              provider="apple"
-              onPress={handleAppleSignIn}
-              loading={socialLoading === 'apple'}
-            />
+            {isAppleSignInAvailable() && (
+              <SocialButton
+                provider="apple"
+                onPress={handleAppleSignIn}
+                loading={socialLoading === 'apple'}
+              />
+            )}
           </View>
 
           {/* ── Footer ── */}

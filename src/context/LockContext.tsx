@@ -6,7 +6,7 @@ import React, {
   useRef,
   useEffect,
 } from 'react';
-import {NativeModules, Alert} from 'react-native';
+import {NativeModules, Alert, Platform} from 'react-native';
 import {useAuth} from './AuthContext';
 import {
   fetchSettings,
@@ -317,6 +317,20 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
         );
       } else if (e?.code === 'UNSUPPORTED') {
         Alert.alert('iOS 16 Required', 'App locking requires iOS 16 or later.');
+      } else if (Platform.OS === 'android' && e?.code === 'ACCESSIBILITY_NOT_GRANTED') {
+        Alert.alert(
+          'Accessibility Required',
+          'To block apps on Android, enable GymBuddy in Settings → Accessibility.',
+          [
+            {text: 'OK'},
+            {
+              text: 'Open Settings',
+              onPress: () => {
+                ScreenTimeManager?.openAccessibilitySettings?.().catch(() => {});
+              },
+            },
+          ],
+        );
       } else {
         Alert.alert('Authorization Failed', e.message ?? 'Something went wrong.');
       }

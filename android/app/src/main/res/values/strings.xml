@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">GymBuddy</string>
+    <string name="overlay_blocked_message">App blocked. Log a gym visit in GymBuddy to unlock.</string>
+    <string name="overlay_open_gymbuddy">Open GymBuddy</string>
+    <string name="accessibility_service_description">Helps you stay focused by blocking selected apps until you log a gym visit. GymBuddy only detects which app is in the foreground to show a block screen; it does not read your data.</string>
 </resources>
