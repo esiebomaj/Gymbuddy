@@ -25,6 +25,7 @@
 		2FB6570169CB5391632F58F1 /* libPods-GymBuddy.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-GymBuddy.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = GymBuddy/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = GymBuddy/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		8D5FCEDF2F67097A0043E34A /* File.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = File.txt; sourceTree = "<group>"; };
 		AA00000100000000DEADBEEF /* ScreenTimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScreenTimeManager.swift; path = GymBuddy/ScreenTimeManager.swift; sourceTree = "<group>"; };
 		AA00000200000000DEADBEEF /* ActivityPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ActivityPickerView.swift; path = GymBuddy/ActivityPickerView.swift; sourceTree = "<group>"; };
 		AA00000300000000DEADBEEF /* ScreenTimeManagerBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ScreenTimeManagerBridge.m; path = GymBuddy/ScreenTimeManagerBridge.m; sourceTree = "<group>"; };
@@ -83,6 +84,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				8D5FCEDF2F67097A0043E34A /* File.txt */,
 				13B07FAE1A68108700A75B9A /* GymBuddy */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -204,9 +206,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-GymBuddy/Pods-GymBuddy-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-GymBuddy/Pods-GymBuddy-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -221,9 +227,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-GymBuddy/Pods-GymBuddy-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-GymBuddy/Pods-GymBuddy-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -274,12 +284,16 @@
 			baseConfigurationReference = F9D44382091AB0C67F9E8975 /* Pods-GymBuddy.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = GymBuddy/GymBuddy.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 62X3QP2BJ2;
+				DEVELOPMENT_TEAM = GA5P2J5N3R;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = GymBuddy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Gymbuddy;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -291,8 +305,9 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.esiebomaj.gymbuddy;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dominiceburuoh.gymbuddy;
 				PRODUCT_NAME = GymBuddy;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OBJC_BRIDGING_HEADER = "GymBuddy/GymBuddy-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -307,11 +322,15 @@
 			baseConfigurationReference = D15A86C1024EDD45A0F3E844 /* Pods-GymBuddy.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = GymBuddy/GymBuddy.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 62X3QP2BJ2;
+				DEVELOPMENT_TEAM = GA5P2J5N3R;
 				INFOPLIST_FILE = GymBuddy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Gymbuddy;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -323,8 +342,9 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.ntradexsolutions.gymbuddy;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dominiceburuoh.gymbuddy;
 				PRODUCT_NAME = GymBuddy;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OBJC_BRIDGING_HEADER = "GymBuddy/GymBuddy-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
