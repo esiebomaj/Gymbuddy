@@ -386,7 +386,6 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingBottom: Spacing.lg,
   },
   stepContent: {
-    flex: 1,
     alignItems: 'center',
     paddingTop: Spacing.xl,
   },
