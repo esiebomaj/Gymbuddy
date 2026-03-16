@@ -340,6 +340,10 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
   }, []);
 
   const selectApps = useCallback(async () => {
+    if (status === 'locked' && selectedAppCount > 0) {
+      Alert.alert('Not allowed', 'Cannot change app selection while in locked state');
+      return;
+    }
     setIsLoading(true);
     try {
       const count = await ScreenTimeManager.showAppPicker();
