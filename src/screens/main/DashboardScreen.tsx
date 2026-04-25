@@ -17,6 +17,7 @@ import {Colors, Spacing, Radius, Typography, type AppColors} from '../../theme';
 import {useTheme} from '../../context/ThemeContext';
 import {useAuth} from '../../context/AuthContext';
 import {useLock} from '../../context/LockContext';
+import Skeleton from '../../components/common/Skeleton';
 
 type Props = {
   navigation: CompositeNavigationProp<
@@ -67,13 +68,14 @@ const getStatusConfig = (colors: AppColors, isDark: boolean) => ({
 const DashboardScreen: React.FC<Props> = ({navigation}) => {
   const {user} = useAuth();
   const {
-    status, 
-    selectedAppCount, 
-    elapsedSeconds, 
-    stats, 
-    refreshStats, 
-    refreshSettings, 
-    screenTimeAuthorized
+    status,
+    selectedAppCount,
+    elapsedSeconds,
+    stats,
+    refreshStats,
+    refreshSettings,
+    screenTimeAuthorized,
+    isHydrated,
   } = useLock();
   const {colors, isDark, barStyle} = useTheme();
   const styles = makeStyles(colors);
@@ -109,6 +111,10 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
           </View>
         </View>
 
+        {!isHydrated ? (
+          <DashboardSkeleton styles={styles} />
+        ) : (
+        <>
         {/* ── Status Hero Card ── (only when locked/unlocked) */}
         {(status === 'locked' || status === 'unlocked') && (
           <View style={[styles.heroCard, {backgroundColor: cfg.bg, borderColor: cfg.border}]}>
@@ -223,11 +229,67 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
             <ChevronRight size={16} color={colors.textMuted} strokeWidth={2} />
           </View>
         </TouchableOpacity>
+        </>
+        )}
 
       </ScrollView>
     </SafeAreaView>
   );
 };
+
+type DashboardStyles = ReturnType<typeof makeStyles>;
+
+const DashboardSkeleton: React.FC<{styles: DashboardStyles}> = ({styles}) => (
+  <View>
+    {/* Hero placeholder */}
+    <View style={styles.skeletonHero}>
+      <Skeleton width={64} height={64} radius={32} style={styles.skeletonHeroEmoji} />
+      <Skeleton width={'55%'} height={22} style={styles.skeletonCenter} />
+      <Skeleton width={'80%'} height={14} style={styles.skeletonCenter} />
+      <Skeleton width={'40%'} height={14} style={styles.skeletonCenter} />
+    </View>
+
+    {/* Streak placeholder */}
+    <View style={styles.skeletonStreak}>
+      <View style={styles.skeletonStreakHeader}>
+        <Skeleton width={90} height={12} />
+        <Skeleton width={110} height={24} radius={Radius.full} />
+      </View>
+      <View style={styles.skeletonDotsRow}>
+        {Array.from({length: 3}).map((_, i) => (
+          <Skeleton key={i} width={30} height={30} radius={15} />
+        ))}
+      </View>
+      <View style={styles.skeletonCenterRow}>
+        <Skeleton width={'60%'} height={36} />
+      </View>
+    </View>
+
+    {/* Stats row placeholder */}
+    <View style={styles.skeletonStatsRow}>
+      {Array.from({length: 3}).map((_, i) => (
+        <View key={i} style={styles.skeletonStatCard}>
+          <Skeleton width={40} height={22} style={styles.skeletonStatValue} />
+          <Skeleton width={64} height={10} />
+        </View>
+      ))}
+    </View>
+
+    <Skeleton width={110} height={12} style={styles.skeletonSectionTitle} />
+
+    {/* Nav card placeholders */}
+    {Array.from({length: 2}).map((_, i) => (
+      <View key={i} style={styles.skeletonNavCard}>
+        <Skeleton width={50} height={50} radius={Radius.lg} />
+        <View style={styles.skeletonNavContent}>
+          <Skeleton width={'55%'} height={16} style={styles.skeletonNavTitle} />
+          <Skeleton width={'80%'} height={12} />
+        </View>
+        <Skeleton width={28} height={28} radius={14} />
+      </View>
+    ))}
+  </View>
+);
 
 const getTimeOfDay = () => {
   const h = new Date().getHours();
@@ -483,6 +545,88 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  // ── Skeleton placeholders ──
+  skeletonHero: {
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.glass,
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.lg,
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  skeletonHeroEmoji: {
+    marginBottom: Spacing.xs,
+  },
+  skeletonCenter: {
+    alignSelf: 'center',
+  },
+  skeletonStreak: {
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  skeletonStreakHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  skeletonDotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.xs,
+  },
+  skeletonCenterRow: {
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  skeletonStatsRow: {
+    flexDirection: 'row',
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    marginBottom: Spacing.xl,
+    paddingVertical: Spacing.md,
+  },
+  skeletonStatCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
+  },
+  skeletonStatValue: {
+    marginBottom: 6,
+  },
+  skeletonSectionTitle: {
+    marginBottom: Spacing.md,
+  },
+  skeletonNavCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.glass,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+    gap: Spacing.md,
+  },
+  skeletonNavContent: {
+    flex: 1,
+    gap: 6,
+  },
+  skeletonNavTitle: {
+    marginBottom: 2,
   },
 });
 
