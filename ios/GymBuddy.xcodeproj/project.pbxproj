@@ -15,6 +15,8 @@
 		AA00000700000000DEADBEEF /* ActivityPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000DEADBEEF /* ActivityPickerView.swift */; };
 		AA00000800000000DEADBEEF /* ScreenTimeManagerBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = AA00000300000000DEADBEEF /* ScreenTimeManagerBridge.m */; };
 		B07B1191D9A5D370157E9B4D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		DA00000500000000DEADBEEF /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA00000200000000DEADBEEF /* DeviceActivityMonitorExtension.swift */; };
+		DA00000600000000DEADBEEF /* GymBuddyDeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DA00000100000000DEADBEEF /* GymBuddyDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,10 +33,38 @@
 		AA00000300000000DEADBEEF /* ScreenTimeManagerBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ScreenTimeManagerBridge.m; path = GymBuddy/ScreenTimeManagerBridge.m; sourceTree = "<group>"; };
 		AA00000400000000DEADBEEF /* GymBuddy-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "GymBuddy-Bridging-Header.h"; path = "GymBuddy/GymBuddy-Bridging-Header.h"; sourceTree = "<group>"; };
 		AA00000500000000DEADBEEF /* GymBuddy.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = GymBuddy.entitlements; path = GymBuddy/GymBuddy.entitlements; sourceTree = "<group>"; };
+		DA00000100000000DEADBEEF /* GymBuddyDeviceActivityMonitor.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GymBuddyDeviceActivityMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA00000200000000DEADBEEF /* DeviceActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeviceActivityMonitorExtension.swift; path = GymBuddyDeviceActivityMonitor/DeviceActivityMonitorExtension.swift; sourceTree = "<group>"; };
+		DA00000300000000DEADBEEF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = GymBuddyDeviceActivityMonitor/Info.plist; sourceTree = "<group>"; };
+		DA00000400000000DEADBEEF /* GymBuddyDeviceActivityMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = GymBuddyDeviceActivityMonitor.entitlements; path = GymBuddyDeviceActivityMonitor/GymBuddyDeviceActivityMonitor.entitlements; sourceTree = "<group>"; };
 		D15A86C1024EDD45A0F3E844 /* Pods-GymBuddy.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GymBuddy.release.xcconfig"; path = "Target Support Files/Pods-GymBuddy/Pods-GymBuddy.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F9D44382091AB0C67F9E8975 /* Pods-GymBuddy.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GymBuddy.debug.xcconfig"; path = "Target Support Files/Pods-GymBuddy/Pods-GymBuddy.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXContainerItemProxy section */
+		DA00001700000000DEADBEEF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DA00001100000000DEADBEEF;
+			remoteInfo = GymBuddyDeviceActivityMonitor;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DA00001500000000DEADBEEF /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DA00000600000000DEADBEEF /* GymBuddyDeviceActivityMonitor.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
@@ -42,6 +72,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				2C12BF289AC0AF97F46317F8 /* libPods-GymBuddy.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA00001300000000DEADBEEF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,6 +123,7 @@
 			children = (
 				8D5FCEDF2F67097A0043E34A /* File.txt */,
 				13B07FAE1A68108700A75B9A /* GymBuddy */,
+				DA00001000000000DEADBEEF /* GymBuddyDeviceActivityMonitor */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -100,8 +138,19 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* GymBuddy.app */,
+				DA00000100000000DEADBEEF /* GymBuddyDeviceActivityMonitor.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DA00001000000000DEADBEEF /* GymBuddyDeviceActivityMonitor */ = {
+			isa = PBXGroup;
+			children = (
+				DA00000200000000DEADBEEF /* DeviceActivityMonitorExtension.swift */,
+				DA00000300000000DEADBEEF /* Info.plist */,
+				DA00000400000000DEADBEEF /* GymBuddyDeviceActivityMonitor.entitlements */,
+			);
+			name = GymBuddyDeviceActivityMonitor;
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -127,15 +176,34 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				E935274F25BFC9531E3341F3 /* [CP] Embed Pods Frameworks */,
 				C7379B94AE674A85CA5AB6D4 /* [CP] Copy Pods Resources */,
+				DA00001500000000DEADBEEF /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				DA00001600000000DEADBEEF /* PBXTargetDependency */,
 			);
 			name = GymBuddy;
 			productName = GymBuddy;
 			productReference = 13B07F961A680F5B00A75B9A /* GymBuddy.app */;
 			productType = "com.apple.product-type.application";
+		};
+		DA00001100000000DEADBEEF /* GymBuddyDeviceActivityMonitor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DA00001800000000DEADBEEF /* Build configuration list for PBXNativeTarget "GymBuddyDeviceActivityMonitor" */;
+			buildPhases = (
+				DA00001200000000DEADBEEF /* Sources */,
+				DA00001300000000DEADBEEF /* Frameworks */,
+				DA00001400000000DEADBEEF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GymBuddyDeviceActivityMonitor;
+			productName = GymBuddyDeviceActivityMonitor;
+			productReference = DA00000100000000DEADBEEF /* GymBuddyDeviceActivityMonitor.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -147,6 +215,9 @@
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1120;
+					};
+					DA00001100000000DEADBEEF = {
+						CreatedOnToolsVersion = 15.0;
 					};
 				};
 			};
@@ -164,6 +235,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* GymBuddy */,
+				DA00001100000000DEADBEEF /* GymBuddyDeviceActivityMonitor */,
 			);
 		};
 /* End PBXProject section */
@@ -176,6 +248,13 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				B07B1191D9A5D370157E9B4D /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA00001400000000DEADBEEF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -276,7 +355,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DA00001200000000DEADBEEF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DA00000500000000DEADBEEF /* DeviceActivityMonitorExtension.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DA00001600000000DEADBEEF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DA00001100000000DEADBEEF /* GymBuddyDeviceActivityMonitor */;
+			targetProxy = DA00001700000000DEADBEEF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -509,6 +604,59 @@
 			};
 			name = Release;
 		};
+		DA00001900000000DEADBEEF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = GymBuddyDeviceActivityMonitor/GymBuddyDeviceActivityMonitor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GA5P2J5N3R;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = GymBuddyDeviceActivityMonitor/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "GymBuddy Activity Monitor";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dominiceburuoh.gymbuddy.DeviceActivityMonitor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DA00001A00000000DEADBEEF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = GymBuddyDeviceActivityMonitor/GymBuddyDeviceActivityMonitor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GA5P2J5N3R;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = GymBuddyDeviceActivityMonitor/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "GymBuddy Activity Monitor";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dominiceburuoh.gymbuddy.DeviceActivityMonitor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -526,6 +674,15 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DA00001800000000DEADBEEF /* Build configuration list for PBXNativeTarget "GymBuddyDeviceActivityMonitor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA00001900000000DEADBEEF /* Debug */,
+				DA00001A00000000DEADBEEF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

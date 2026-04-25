@@ -6,7 +6,7 @@ import React, {
   useRef,
   useEffect,
 } from 'react';
-import {NativeModules, Alert, Platform} from 'react-native';
+import {NativeModules, Alert, Platform, AppState} from 'react-native';
 import {useAuth} from './AuthContext';
 import {
   fetchSettings,
@@ -162,18 +162,71 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
     return () => { cancelled = true; };
   }, [token]);
 
-  // ── Auto-lock / unlock based on schedule ────────────────────────────────────
+  // ── Register the OS-level lock schedule ────────────────────────────────────
+  // The DeviceActivityMonitor extension actually flips the shield at the
+  // boundaries — even when the app is closed. JS only declares intent here.
+  // Re-runs whenever the user's gym days or lock window change, or when the
+  // selected-app set transitions between empty and non-empty.
+
+  useEffect(() => {
+    if (!isHydrated || !screenTimeAuthorized) {
+      console.log('[LockContext] schedule effect skipped', {isHydrated, screenTimeAuthorized});
+      return;
+    }
+
+    if (selectedAppCount === 0) {
+      console.log('[LockContext] no apps selected — clearing schedule');
+      ScreenTimeManager.clearScheduledLockWindow?.().catch(() => {});
+      return;
+    }
+
+    const [startH, startM] = settings.lock_start_time.split(':').map(Number);
+    const [endH, endM] = settings.lock_end_time.split(':').map(Number);
+
+
+    const params = {
+      gymDays: settings.gym_days,
+      startHour: startH,
+      startMinute: startM,
+      endHour: endH,
+      endMinute: endM,
+    };
+    console.log('[LockContext] calling scheduleLockWindow', params);
+    ScreenTimeManager.scheduleLockWindow?.(params)
+      .then(() => {
+        console.log('[LockContext] scheduleLockWindow ok');
+        ScreenTimeManager.getScheduleDebugInfo?.()
+          .then((info: unknown) => console.log('[LockContext] schedule info', info))
+          .catch(() => {});
+      })
+      .catch((e: any) => {
+        console.warn('[LockContext] scheduleLockWindow failed:', e);
+      });
+  }, [
+    isHydrated,
+    screenTimeAuthorized,
+    selectedAppCount,
+    settings.gym_days,
+    settings.lock_start_time,
+    settings.lock_end_time,
+  ]);
+
+  // ── Reconcile in-foreground status with the OS shield ──────────────────────
+  // The OS may have flipped the shield while we were closed/backgrounded.
+  // Run a single reconciliation now and on every foreground transition.
 
   useEffect(() => {
     if (!isHydrated || !screenTimeAuthorized || selectedAppCount === 0) {return;}
 
-    const evaluate = async () => {
-      const shouldLock = shouldLockApps(settings, stats.visited_today);
+    const reconcile = async () => {
       try {
-        const shieldedCount: number =
-        await ScreenTimeManager.getShieldedAppCount();
+        const shouldLock = shouldLockApps(settings, stats.visited_today);
+        const shieldedCount: number = await ScreenTimeManager.getShieldedAppCount();
         const isCurrentlyLocked = shieldedCount > 0;
 
+        // If the app is open mid-window and the OS hasn't shielded yet
+        // (e.g. user just picked apps, or just changed settings), apply now
+        // so the UX matches the schedule without waiting for the next boundary.
         if (shouldLock && !isCurrentlyLocked) {
           await ScreenTimeManager.lockApps();
           setStatus('locked');
@@ -185,16 +238,20 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
         } else if (isCurrentlyLocked) {
           setStatus('locked');
           setLockedAt(prev => prev ?? new Date());
+        } else {
+          setStatus('unlocked');
+          setLockedAt(null);
         }
-        // If not locked and shouldn't be, leave status as 'unlocked'
       } catch (e) {
-        console.warn('Lock schedule evaluation failed:', e);
+        console.warn('Lock reconciliation failed:', e);
       }
     };
 
-    evaluate();
-    const interval = setInterval(evaluate, 60_000);
-    return () => clearInterval(interval);
+    reconcile();
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') {reconcile();}
+    });
+    return () => sub.remove();
   }, [
     isHydrated, 
     screenTimeAuthorized, 
@@ -374,6 +431,15 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
     setIsLoading(true);
     try {
       await submitVisit(token, workoutType, note, photoUri);
+
+      // Tell native (and the DeviceActivityMonitor extension via shared
+      // defaults) that today's gym visit is logged. The extension will
+      // skip applying the shield at the next interval start today.
+      try {
+        await ScreenTimeManager.markVisitedToday?.();
+      } catch {
+        // Non-critical — backend is still source of truth.
+      }
 
       if (status === 'locked') {
         await ScreenTimeManager.unlockApps();

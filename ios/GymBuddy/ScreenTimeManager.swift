@@ -1,24 +1,37 @@
 import Foundation
 import FamilyControls
 import ManagedSettings
+import DeviceActivity
+import UserNotifications
 import SwiftUI
 
 // ---------------------------------------------------------------------------
 // ScreenTimeManager — React Native native module
 //
-// Wraps Apple's Screen Time APIs (FamilyControls + ManagedSettings) so that
-// the JS layer can: request auth → pick apps → shield → unshield.
+// Wraps Apple's Screen Time APIs (FamilyControls + ManagedSettings +
+// DeviceActivity) so that the JS layer can: request auth → pick apps →
+// schedule a daily lock window. The actual shield/unshield at the scheduled
+// boundaries is performed by GymBuddyDeviceActivityMonitor (extension target),
+// which reads the same shared App Group UserDefaults.
 // ---------------------------------------------------------------------------
 
 @objc(ScreenTimeManager)
 class ScreenTimeManager: NSObject {
 
-  private static let kSelectedApps = "STM_selectedApps"
-  private static let kCurrentSelection = "STM_currentSelection"
+  // Shared App Group keys — must match GymBuddyDeviceActivityMonitor.
+  static let appGroupID = "group.com.dominiceburuoh.gymbuddy"
+  static let kSelectedApps = "STM_selectedApps"
+  static let kCurrentSelection = "STM_currentSelection"
+  static let kGymDays = "STM_gymDays"
+  static let kVisitedTodayDate = "STM_visitedTodayDate"
+  static let activityName = DeviceActivityName("gymBuddyDailyLock")
+  static let lockStartNotificationID = "gymbuddy.lock.start"
+
+  static let sharedDefaults = UserDefaults(suiteName: appGroupID)!
 
   private let store = ManagedSettingsStore()
 
-  // In-memory cache, kept in sync with UserDefaults via save/restore.
+  // In-memory cache, kept in sync with shared UserDefaults via save/restore.
   static var selectedApps: Set<ApplicationToken> = [] {
     didSet { Self.persistSelectedApps() }
   }
@@ -36,25 +49,33 @@ class ScreenTimeManager: NSObject {
 
   private static func persistSelectedApps() {
     guard let data = try? JSONEncoder().encode(selectedApps) else { return }
-    UserDefaults.standard.set(data, forKey: kSelectedApps)
+    sharedDefaults.set(data, forKey: kSelectedApps)
   }
 
   private static func persistCurrentSelection() {
     guard let data = try? JSONEncoder().encode(currentSelection) else { return }
-    UserDefaults.standard.set(data, forKey: kCurrentSelection)
+    sharedDefaults.set(data, forKey: kCurrentSelection)
   }
 
   private static func restorePersistedState() {
-    if let data = UserDefaults.standard.data(forKey: kSelectedApps),
+    if let data = sharedDefaults.data(forKey: kSelectedApps),
        let apps = try? JSONDecoder().decode(Set<ApplicationToken>.self, from: data),
        !apps.isEmpty {
-      // Bypass didSet to avoid a redundant write back
       selectedApps = apps
     }
-    if let data = UserDefaults.standard.data(forKey: kCurrentSelection),
+    if let data = sharedDefaults.data(forKey: kCurrentSelection),
        let sel = try? JSONDecoder().decode(FamilyActivitySelection.self, from: data) {
       currentSelection = sel
     }
+  }
+
+  // ISO yyyy-MM-dd string for "today" in the user's calendar.
+  static func todayDateString() -> String {
+    let f = DateFormatter()
+    f.calendar = Calendar(identifier: .gregorian)
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.dateFormat = "yyyy-MM-dd"
+    return f.string(from: Date())
   }
 
   // MARK: - 1. Authorization
@@ -191,6 +212,177 @@ class ScreenTimeManager: NSObject {
     // Clearing the store removes every restriction this app has applied.
     store.clearAllSettings()
     resolve("All apps unlocked")
+  }
+
+  // MARK: - 5. Schedule the daily lock window
+  // Registers a DeviceActivitySchedule with the OS so that the
+  // GymBuddyDeviceActivityMonitor extension is woken at the start/end of
+  // every lock window — even if the app is closed. Also schedules a local
+  // notification at the start of each gym day's window.
+  //
+  // params: { gymDays: [Int] (0..6, Sun=0), startHour, startMinute, endHour, endMinute }
+  @objc
+  func scheduleLockWindow(
+    _ params: NSDictionary,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    guard #available(iOS 16.0, *) else {
+      reject("UNSUPPORTED", "Screen Time scheduling requires iOS 16 or later.", nil)
+      return
+    }
+
+    // RN bridges JS numbers as NSNumber; coerce defensively rather than
+    // relying on `as? Int` / `as? [Int]` which can fail silently for arrays.
+    guard
+      let gymDaysRaw = params["gymDays"] as? [Any],
+      let startHour = (params["startHour"] as? NSNumber)?.intValue,
+      let startMinute = (params["startMinute"] as? NSNumber)?.intValue,
+      let endHour = (params["endHour"] as? NSNumber)?.intValue,
+      let endMinute = (params["endMinute"] as? NSNumber)?.intValue
+    else {
+      reject("BAD_PARAMS", "scheduleLockWindow requires gymDays:[Int], startHour, startMinute, endHour, endMinute. Got: \(params)", nil)
+      return
+    }
+    let gymDays: [Int] = gymDaysRaw.compactMap { ($0 as? NSNumber)?.intValue }
+    guard !gymDays.isEmpty else {
+      reject("BAD_PARAMS", "gymDays must be a non-empty array of integers (0..6, Sun=0). Got: \(gymDaysRaw)", nil)
+      return
+    }
+
+    Self.sharedDefaults.set(gymDays, forKey: Self.kGymDays)
+    NSLog("[ScreenTimeManager] scheduleLockWindow gymDays=\(gymDays) start=\(startHour):\(startMinute) end=\(endHour):\(endMinute)")
+
+    let schedule = DeviceActivitySchedule(
+      intervalStart: DateComponents(hour: startHour, minute: startMinute),
+      intervalEnd:   DateComponents(hour: endHour,   minute: endMinute),
+      repeats: true
+    )
+
+    let center = DeviceActivityCenter()
+    center.stopMonitoring([Self.activityName])
+    do {
+      try center.startMonitoring(Self.activityName, during: schedule)
+      NSLog("[ScreenTimeManager] startMonitoring succeeded for \(Self.activityName.rawValue)")
+    } catch {
+      NSLog("[ScreenTimeManager] startMonitoring failed: \(error.localizedDescription)")
+      reject("SCHEDULE_FAILED", "startMonitoring failed: \(error.localizedDescription)", error)
+      return
+    }
+
+    Self.scheduleLockStartNotification(
+      gymDays: gymDays,
+      hour: startHour,
+      minute: startMinute
+    )
+
+    resolve(nil)
+  }
+
+  // MARK: - Diagnostics
+  // Returns whether the gymBuddyDailyLock activity is currently registered
+  // with the OS, plus the persisted gymDays / visited flag and the count of
+  // selected/shielded apps. Lets JS verify end-to-end setup without a debugger.
+  @objc
+  func getScheduleDebugInfo(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    guard #available(iOS 16.0, *) else {
+      resolve(["supported": false])
+      return
+    }
+    let center = DeviceActivityCenter()
+    let activities = center.activities.map { $0.rawValue }
+    let isMonitoring = activities.contains(Self.activityName.rawValue)
+    let gymDays = Self.sharedDefaults.array(forKey: Self.kGymDays) as? [Int] ?? []
+    let visitedToday = Self.sharedDefaults.string(forKey: Self.kVisitedTodayDate) ?? ""
+    resolve([
+      "supported": true,
+      "isMonitoring": isMonitoring,
+      "activities": activities,
+      "gymDays": gymDays,
+      "visitedTodayDate": visitedToday,
+      "selectedAppCount": Self.selectedApps.count,
+      "shieldedAppCount": store.shield.applications?.count ?? 0,
+      "today": Self.todayDateString(),
+    ])
+  }
+
+  @objc
+  func clearScheduledLockWindow(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    guard #available(iOS 16.0, *) else {
+      resolve(nil)
+      return
+    }
+    DeviceActivityCenter().stopMonitoring([Self.activityName])
+    Self.cancelLockStartNotification()
+    resolve(nil)
+  }
+
+  // MARK: - 6. Visited-today flag
+  // The DeviceActivityMonitor extension reads this flag at intervalDidStart
+  // to decide whether to apply the shield. JS calls markVisitedToday() right
+  // after submitProof + unlockApps so the next interval start (e.g. tomorrow)
+  // does not pre-emptively re-shield today's apps if the user already worked
+  // out before the window began.
+  @objc
+  func markVisitedToday(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    Self.sharedDefaults.set(Self.todayDateString(), forKey: Self.kVisitedTodayDate)
+    resolve(nil)
+  }
+
+  @objc
+  func clearVisitedToday(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    Self.sharedDefaults.removeObject(forKey: Self.kVisitedTodayDate)
+    resolve(nil)
+  }
+
+  // MARK: - 7. Local notification at lock-start (Option D, UX cue only)
+
+  private static func scheduleLockStartNotification(gymDays: [Int], hour: Int, minute: Int) {
+    let center = UNUserNotificationCenter.current()
+
+    // Best-effort permission request; lock still works if denied.
+    center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+
+    cancelLockStartNotification()
+
+    let content = UNMutableNotificationContent()
+    content.title = "Apps locked"
+    content.body = "Your apps are locked. Hit the gym to unlock them."
+    content.sound = .default
+
+    // gymDays uses JS Date.getDay() convention: 0=Sun..6=Sat.
+    // UNCalendarNotificationTrigger uses Calendar.weekday: 1=Sun..7=Sat.
+    for jsDay in gymDays {
+      var components = DateComponents()
+      components.weekday = jsDay + 1
+      components.hour = hour
+      components.minute = minute
+
+      let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+      let request = UNNotificationRequest(
+        identifier: "\(lockStartNotificationID).\(jsDay)",
+        content: content,
+        trigger: trigger
+      )
+      center.add(request) { _ in }
+    }
+  }
+
+  private static func cancelLockStartNotification() {
+    let ids = (0...6).map { "\(lockStartNotificationID).\($0)" }
+    UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
   }
 
   // Required: tell React Native this module needs the main queue for UI work.
