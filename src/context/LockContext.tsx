@@ -111,30 +111,73 @@ export const LockProvider: React.FC<{children: React.ReactNode}> = ({
   const [settings, setSettings] = useState<SettingsResponse>(DEFAULT_SETTINGS);
   const [stats, setStats] = useState<StatsResponse>(DEFAULT_STATS);
 
-  // ── Check Screen Time authorization on mount ─────────────────────────────
+  // ── Check Screen Time authorization on mount + on foreground ─────────────
+  // iOS can transiently return `notDetermined` for FamilyControls auth on
+  // cold launch (especially after the app has been killed for a long time)
+  // before the daemon loads. We:
+  //  1. Re-run the check whenever the app becomes active so a transient
+  //     `notDetermined` self-corrects on the next foreground.
+  //  2. Treat persisted/shielded apps as a strong "previously authorized"
+  //     hint — only flip to unauthorized when iOS explicitly says `denied`.
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+
+    const reconcileAuth = async () => {
       try {
-        const result = await ScreenTimeManager.checkAuthorizationStatus();
+        // Read persisted app counts first — these don't require auth and tell
+        // us if the user has used the app successfully before.
+        let shieldedCount = 0;
+        let selectedCount = 0;
+        try {
+          shieldedCount = await ScreenTimeManager.getShieldedAppCount();
+        } catch {}
+        try {
+          selectedCount = await ScreenTimeManager.getSelectedAppCount();
+        } catch {}
+
+        const hasPriorSelection = shieldedCount > 0 || selectedCount > 0;
+
+        let result: string = 'notDetermined';
+        try {
+          result = await ScreenTimeManager.checkAuthorizationStatus();
+        } catch {
+          // iOS < 16 or module unavailable — leave as unauthorized.
+          return;
+        }
+        if (cancelled) {return;}
+
         if (result === 'approved') {
           setScreenTimeAuthorized(true);
-          // Restore persisted app selection count so lockApps() works without re-picking.
-          // Prefer the shielded count (actively locked) over the saved selection.
-          const shieldedCount: number = await ScreenTimeManager.getShieldedAppCount();
-          if (shieldedCount > 0) {
-            setSelectedAppCount(shieldedCount);
-            setStatus('locked');
-          } else {
-            const selectedCount: number = await ScreenTimeManager.getSelectedAppCount();
-            setSelectedAppCount(selectedCount);
-          }
-          // Actual lock/unlock is handled by the scheduling effect once hydrated.
+        } else if (result === 'denied') {
+          // User explicitly revoked in Settings — trust this.
+          setScreenTimeAuthorized(false);
+        } else if (hasPriorSelection) {
+          // `notDetermined` + we have shielded/selected apps means iOS just
+          // hasn't loaded auth state yet. Stay optimistic — the next
+          // foreground or retry will confirm.
+          setScreenTimeAuthorized(true);
+        }
+
+        if (shieldedCount > 0) {
+          setSelectedAppCount(shieldedCount);
+          setStatus('locked');
+        } else if (selectedCount > 0) {
+          setSelectedAppCount(prev => (prev === 0 ? selectedCount : prev));
         }
       } catch {
-        // iOS < 16 or module unavailable — leave as unauthorized
+        // Swallow — we'll retry on the next foreground transition.
       }
-    })();
+    };
+
+    reconcileAuth();
+    const sub = AppState.addEventListener('change', next => {
+      if (next === 'active') {reconcileAuth();}
+    });
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
   }, []);
 
   // Fetch data from backend

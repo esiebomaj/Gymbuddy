@@ -43,7 +43,16 @@ const getStatusConfig = (colors: AppColors, isDark: boolean) => ({
     bg: colors.glass,
     border: colors.glassBorder,
     glow: 'transparent',
-    description: 'Select apps to restrict — they lock immediately until you hit the gym',
+    description: 'Select apps to restrict. They lock immediately until you hit the gym',
+  },
+  outsideWindow: {
+    emoji: '🌙',
+    label: 'Outside Window',
+    color: colors.accent,
+    bg: isDark ? 'rgba(191,90,242,0.10)' : 'rgba(191,90,242,0.07)',
+    border: `${colors.accent}55`,
+    glow: 'rgba(191,90,242,0.20)',
+    description: 'Apps unlocked. Your gym window isn\'t active right now',
   },
   locked: {
     emoji: '🔒',
@@ -61,7 +70,7 @@ const getStatusConfig = (colors: AppColors, isDark: boolean) => ({
     bg: isDark ? 'rgba(255,107,53,0.12)' : 'rgba(255,107,53,0.07)',
     border: `${Colors.primary}55`,
     glow: colors.glowPrimary,
-    description: 'Workout verified! Apps are unlocked for today',
+    description: 'Workout verified! Apps are unlocked for today --',
   },
 });
 
@@ -71,6 +80,7 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
     status,
     selectedAppCount,
     elapsedSeconds,
+    settings,
     stats,
     refreshStats,
     refreshSettings,
@@ -80,7 +90,26 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
   const {colors, isDark, barStyle} = useTheme();
   const styles = makeStyles(colors);
 
-  const finalStatus = !screenTimeAuthorized ? 'unauthorized' : selectedAppCount <= 0 ? 'noAppsSelected' : status;
+  // True iff today is a configured gym day AND `now` falls inside the
+  // configured daily lock window. On non-gym days the window doesn't
+  // apply at all, so we treat them as "outside window".
+  const isInLockWindow = (() => {
+    const now = new Date();
+    if (!settings.gym_days.includes(now.getDay())) {return false;}
+
+    const [startH, startM] = settings.lock_start_time.split(':').map(Number);
+    const [endH, endM] = settings.lock_end_time.split(':').map(Number);
+    const cur = now.getHours() * 60 + now.getMinutes();
+    return cur >= startH * 60 + startM && cur <= endH * 60 + endM;
+  })();
+
+  const finalStatus = !screenTimeAuthorized
+    ? 'unauthorized'
+    : selectedAppCount <= 0
+      ? 'noAppsSelected'
+      : status === 'unlocked' && !stats.visited_today && !isInLockWindow
+        ? 'outsideWindow'
+        : status;
 
   const cfg = getStatusConfig(colors, isDark)[finalStatus];
 
@@ -204,7 +233,7 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
             <Text style={styles.navTitle}>App Selection</Text>
             <Text style={styles.navSubtitle}>
               {selectedAppCount > 0
-                ? `${selectedAppCount} apps locked — tap to change`
+                ? `${selectedAppCount} apps locked. Tap to change`
                 : 'Choose which apps to restrict'}
             </Text>
           </View>

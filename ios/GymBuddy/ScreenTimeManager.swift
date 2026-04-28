@@ -108,13 +108,33 @@ class ScreenTimeManager: NSObject {
   }
 
   // MARK: - 1b. Check existing authorization
+  // On cold launch (especially after the app has been killed for a long time)
+  // AuthorizationCenter.shared.authorizationStatus can transiently return
+  // .notDetermined before the FamilyControls daemon finishes loading. Retry
+  // briefly so JS doesn't see a stale "unauthorized" state.
   @objc
   func checkAuthorizationStatus(
     _ resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    if #available(iOS 16.0, *) {
-      let status = AuthorizationCenter.shared.authorizationStatus
+    guard #available(iOS 16.0, *) else {
+      reject("UNSUPPORTED", "Screen Time requires iOS 16 or later.", nil)
+      return
+    }
+
+    Task {
+      let center = AuthorizationCenter.shared
+      var status = center.authorizationStatus
+
+      // Retry up to ~1s total if the daemon hasn't reported a definitive
+      // status yet. Bail out as soon as we see approved/denied.
+      var attempts = 0
+      while status == .notDetermined && attempts < 5 {
+        try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+        status = center.authorizationStatus
+        attempts += 1
+      }
+
       switch status {
       case .approved:
         resolve("approved")
@@ -125,8 +145,6 @@ class ScreenTimeManager: NSObject {
       @unknown default:
         resolve("notDetermined")
       }
-    } else {
-      reject("UNSUPPORTED", "Screen Time requires iOS 16 or later.", nil)
     }
   }
 
