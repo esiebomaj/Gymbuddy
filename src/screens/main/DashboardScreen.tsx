@@ -26,6 +26,8 @@ type Props = {
   >;
 };
 
+const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] as const;
+
 const getStatusConfig = (colors: AppColors, isDark: boolean) => ({
   unauthorized: {
     emoji: '🔐',
@@ -181,14 +183,51 @@ const DashboardScreen: React.FC<Props> = ({navigation}) => {
             </View>
           </View>
 
-          {/* Progress dots */}
+          {/* Progress dots — one per configured gym day, filled if that exact day was logged */}
           <View style={styles.dotsRow}>
-            {Array.from({length: stats.weekly_goal}).map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, i < stats.matching_weekly_visits ? styles.dotFilled : styles.dotEmpty]}
-              />
-            ))}
+            {(() => {
+              const sortedGymDays = [...settings.gym_days].sort((a, b) => a - b);
+              if (sortedGymDays.length === 0) {return null;}
+
+              const now = new Date();
+              const todayDay = now.getDay(); // 0=Sun … 6=Sat
+              const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - todayDay);
+              const visited = new Set(stats.matching_visit_dates_this_week);
+
+              return sortedGymDays.map(dayNum => {
+                const d = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + dayNum);
+                const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                const isVisited = visited.has(iso);
+                const isToday = dayNum === todayDay;
+                const isPast = dayNum < todayDay && !isVisited;
+
+                return (
+                  <View key={dayNum} style={styles.dayCell}>
+                    <Text
+                      style={[
+                        styles.dayLabel,
+                        isVisited && styles.dayLabelFilled,
+                        isToday && !isVisited && styles.dayLabelToday,
+                        isPast && styles.dayLabelMissed,
+                      ]}>
+                      {DAY_LABELS[dayNum]}
+                    </Text>
+                    <View
+                      style={[
+                        styles.dot,
+                        isVisited
+                          ? styles.dotFilled
+                          : isToday
+                          ? styles.dotToday
+                          : isPast
+                          ? styles.dotMissed
+                          : styles.dotEmpty,
+                      ]}
+                    />
+                  </View>
+                );
+              });
+            })()}
           </View>
 
           {/* Count */}
@@ -452,6 +491,27 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     marginBottom: Spacing.md,
     paddingHorizontal: Spacing.xs,
   },
+  dayCell: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  dayLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  dayLabelFilled: {
+    color: Colors.primary,
+  },
+  dayLabelToday: {
+    color: colors.textPrimary,
+  },
+  dayLabelMissed: {
+    color: colors.textMuted,
+    opacity: 0.6,
+  },
   dot: {
     width: 30,
     height: 30,
@@ -468,6 +528,17 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1.5,
     borderColor: colors.border,
+  },
+  dotToday: {
+    backgroundColor: 'rgba(255,107,53,0.12)',
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
+  dotMissed: {
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    opacity: 0.5,
   },
   streakCountRow: {
     flexDirection: 'row',
